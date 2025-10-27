@@ -9,7 +9,7 @@ export const APP_CONFIG = {
 
 // API Configuration
 export const API_CONFIG = {
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://live-code-be-2.ript.vn/api',
   timeout: 10000,
   retryAttempts: 3,
   retryDelay: 1000,

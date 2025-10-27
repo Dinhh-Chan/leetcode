@@ -1,11 +1,6 @@
 import { apiService } from './api';
-import { mockApiService } from './mockApi';
 import { API_ENDPOINTS } from '@/constants';
 import { Problem, Submission, FilterOptions, CodeSubmission, ApiResponse } from '@/types';
-
-// Use mock API in development
-const isDevelopment = import.meta.env.DEV;
-const api = isDevelopment ? mockApiService : apiService;
 
 export interface ProblemsListResponse {
   problems: Problem[];
@@ -38,10 +33,6 @@ class ProblemsService {
     limit: number = 20,
     filters?: FilterOptions
   ): Promise<ProblemsListResponse> {
-    if (isDevelopment) {
-      return mockApiService.getProblems(page, limit, filters);
-    }
-
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
@@ -72,9 +63,7 @@ class ProblemsService {
 
   // Get problem by ID
   async getProblem(id: number): Promise<Problem> {
-    return isDevelopment 
-      ? await mockApiService.getProblem(id)
-      : await apiService.get<Problem>(API_ENDPOINTS.problems.detail(id));
+    return await apiService.get<Problem>(API_ENDPOINTS.problems.detail(id));
   }
 
   // Get problem by slug

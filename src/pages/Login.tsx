@@ -14,8 +14,8 @@ import { LoginForm } from '@/types';
 import Header from '@/components/Header';
 
 const loginSchema = z.object({
-  email: z.string().email('Email không hợp lệ'),
-  password: z.string().min(8, 'Mật khẩu phải có ít nhất 8 ký tự'),
+  username: z.string().min(3, 'Tên người dùng phải có ít nhất 3 ký tự'),
+  password: z.string().min(1, 'Mật khẩu không được để trống'),
 });
 
 const Login = () => {
@@ -30,11 +30,11 @@ const Login = () => {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginForm>({
+  } = useForm<{ username: string; password: string }>({
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = async (data: LoginForm) => {
+  const onSubmit = async (data: { username: string; password: string }) => {
     try {
       await login(data);
       navigate(from, { replace: true });
@@ -64,19 +64,19 @@ const Login = () => {
             )}
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Nhập email của bạn"
-                  {...register('email')}
-                  className={errors.email ? 'border-red-500' : ''}
-                />
-                {errors.email && (
-                  <p className="text-sm text-red-500">{errors.email.message}</p>
-                )}
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="username">Tên người dùng</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="Nhập tên người dùng"
+                    {...register('username')}
+                    className={errors.username ? 'border-red-500' : ''}
+                  />
+                  {errors.username && (
+                    <p className="text-sm text-red-500">{errors.username.message}</p>
+                  )}
+                </div>
 
               <div className="space-y-2">
                 <Label htmlFor="password">Mật khẩu</Label>

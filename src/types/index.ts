@@ -1,4 +1,27 @@
-// Common types for the application
+// Authentication types
+export interface LoginRequest {
+  platform: string;
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  data: {
+    accessToken: string;
+    refreshToken: string;
+    accessExpireAt: number;
+    refreshExpireAt: number;
+  };
+  success: boolean;
+}
+
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+  accessExpireAt: number;
+  refreshExpireAt: number;
+}
+
 export interface User {
   id: string;
   username: string;
@@ -110,7 +133,7 @@ export interface ApiError {
 
 // Form types
 export interface LoginForm {
-  email: string;
+  username: string;
   password: string;
 }
 

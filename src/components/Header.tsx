@@ -3,7 +3,6 @@ import { ChevronLeft, Bell, Award, Sun, Moon, Monitor, User, LogOut, Settings } 
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { useAutoLogin } from "@/hooks/useAutoLogin";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { NAV_ITEMS } from "@/constants";
 import {
@@ -20,13 +19,6 @@ const Header = memo(() => {
   const location = useLocation();
   const { user, isAuthenticated, logout } = useAuthContext();
   const { theme, setTheme, resolvedTheme } = useThemeContext();
-  
-  // Auto login in development
-  const { user: autoUser, isAuthenticated: autoIsAuthenticated } = useAutoLogin();
-  
-  // Use auto-login data in development
-  const currentUser = import.meta.env.DEV ? autoUser : user;
-  const currentIsAuthenticated = import.meta.env.DEV ? autoIsAuthenticated : isAuthenticated;
   
   const isActive = (path: string) => {
     if (path === "/") return location.pathname === "/";
@@ -83,21 +75,28 @@ const Header = memo(() => {
             <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs">3</Badge>
           </Button>
           
-          {currentIsAuthenticated ? (
+          {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={currentUser?.avatar} alt={currentUser?.username} />
-                    <AvatarFallback>{currentUser?.username?.[0]?.toUpperCase()}</AvatarFallback>
+                    <AvatarImage src={user?.avatar} alt={user?.username} />
+                    <AvatarFallback>
+                      {(user?.fullname || user?.username)?.[0]?.toUpperCase()}
+                    </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <div className="flex flex-col space-y-1 p-2">
-                  <p className="text-sm font-medium leading-none">{currentUser?.username}</p>
+                  <p className="text-sm font-medium leading-none">
+                    {user?.fullname || user?.username}
+                  </p>
                   <p className="text-xs leading-none text-muted-foreground">
-                    {currentUser?.email}
+                    {user?.email}
+                  </p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {user?.systemRole}
                   </p>
                 </div>
                 <DropdownMenuSeparator />
