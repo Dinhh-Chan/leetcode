@@ -1,10 +1,10 @@
-import React, { memo, useState } from "react";
+import React, { memo, useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Check, Circle, Star, Clock, Users, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useProblems } from "@/hooks/useProblems";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { Problem } from "@/types";
+import { Problem } from "@/services/types/problems";
 import { DIFFICULTY_COLORS, PROBLEM_STATUS } from "@/constants";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,8 +16,15 @@ const ProblemList = memo(() => {
   const [sortBy, setSortBy] = useState<'title' | 'difficulty' | 'acceptance'>('title');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
-  const getDifficultyColor = (difficulty: string) => {
-    return DIFFICULTY_COLORS[difficulty as keyof typeof DIFFICULTY_COLORS] || "text-muted-foreground";
+  const getDifficultyLabel = (difficulty: number): 'Easy' | 'Medium' | 'Hard' => {
+    if (difficulty === 1) return 'Easy';
+    if (difficulty === 2) return 'Medium';
+    return 'Hard';
+  };
+
+  const getDifficultyColor = (difficulty: number) => {
+    const label = getDifficultyLabel(difficulty);
+    return DIFFICULTY_COLORS[label] || "text-muted-foreground";
   };
 
   const getStatusIcon = (status: string | null | undefined) => {
@@ -30,9 +37,33 @@ const ProblemList = memo(() => {
     return <Circle className="h-4 w-4 text-muted-foreground/30" />;
   };
 
-  const formatAcceptance = (acceptance: number) => {
-    return `${acceptance.toFixed(1)}%`;
+  // Transform problems to include display properties
+  type DisplayProblem = Problem & {
+    id: number;
+    title: string;
+    difficultyLabel: 'Easy' | 'Medium' | 'Hard';
+    tags: string[];
+    status?: string | null;
   };
+
+  const displayProblems = useMemo<DisplayProblem[]>(() => {
+    if (!problems || !Array.isArray(problems)) return [];
+    return problems.map((problem, index): DisplayProblem => {
+      const { name, difficulty, topic, sub_topic, ...rest } = problem;
+      return {
+        ...rest,
+        id: index + 1 + ((currentPage - 1) * (pagination?.limit || 20)),
+        title: name,
+        difficultyLabel: getDifficultyLabel(difficulty),
+        tags: [topic?.topic_name, sub_topic?.sub_topic_name].filter(Boolean) as string[],
+        status: null, // Status will be added later when we have submission data
+        name,
+        difficulty,
+        topic,
+        sub_topic,
+      };
+    });
+  }, [problems, currentPage, pagination]);
 
   const handleSort = (field: 'title' | 'difficulty' | 'acceptance') => {
     if (sortBy === field) {
@@ -94,7 +125,7 @@ const ProblemList = memo(() => {
 
       {/* Problems list */}
       <div className="rounded-lg border bg-card">
-        {problems.length === 0 ? (
+        {displayProblems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
             <TrendingUp className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No problems found</h3>
@@ -103,12 +134,12 @@ const ProblemList = memo(() => {
             </p>
           </div>
         ) : (
-          problems.map((problem, index) => (
+          displayProblems.map((problem, index) => (
             <div
-              key={problem.id}
+              key={problem._id}
               className={cn(
                 "flex items-center gap-4 p-3 hover:bg-muted/50 transition-colors",
-                index !== problems.length - 1 && "border-b"
+                index !== displayProblems.length - 1 && "border-b"
               )}
             >
               <div className="flex w-8 items-center justify-center">
@@ -118,31 +149,41 @@ const ProblemList = memo(() => {
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">{problem.id}.</span>
                   <Link 
-                    to={`/problems/${problem.id}`}
+                    to={`/problems/${problem._id}`}
                     className="cursor-pointer text-sm font-medium hover:text-primary truncate"
                   >
                     {problem.title}
                   </Link>
-                  {problem.isPremium && (
-                    <Badge variant="secondary" className="text-xs">Premium</Badge>
+                  {!problem.is_public && (
+                    <Badge variant="secondary" className="text-xs">Private</Badge>
                   )}
                 </div>
-                <div className="flex items-center gap-4 mt-1">
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Users className="h-3 w-3" />
-                    {problem.likes}
-                  </div>
+                <div className="flex items-center gap-4 mt-1 flex-wrap">
+                  {problem.topic?.topic_name && (
+                    <Badge variant="outline" className="text-xs">
+                      {problem.topic.topic_name}
+                    </Badge>
+                  )}
+                  {problem.sub_topic?.sub_topic_name && (
+                    <Badge variant="outline" className="text-xs">
+                      {problem.sub_topic.sub_topic_name}
+                    </Badge>
+                  )}
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Clock className="h-3 w-3" />
-                    {problem.tags.slice(0, 2).join(', ')}
+                    {problem.time_limit_ms}ms
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Users className="h-3 w-3" />
+                    {problem.memory_limit_mb}MB
                   </div>
                 </div>
               </div>
               <div className="text-sm text-muted-foreground w-16 text-center">
-                {formatAcceptance(problem.acceptance)}
+                {problem.number_of_tests || 0} tests
               </div>
-              <div className={cn("w-16 text-sm font-medium text-center", getDifficultyColor(problem.difficulty))}>
-                {problem.difficulty}
+              <div className={cn("w-20 text-sm font-medium text-center", getDifficultyColor(problem.difficulty))}>
+                {problem.difficultyLabel}
               </div>
               <div className="flex items-center gap-1">
                 <Button

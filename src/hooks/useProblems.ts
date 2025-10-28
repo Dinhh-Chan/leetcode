@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { problemsService } from '@/services/problems';
-import { Problem, FilterOptions, CodeSubmission } from '@/types';
+import { Problem, ProblemsListResponse } from '@/services/types/problems';
+import { FilterOptions, CodeSubmission } from '@/types';
 import { toast } from 'sonner';
 
 export const useProblems = () => {
@@ -59,7 +60,7 @@ export const useProblems = () => {
   });
 
   // Get problem by ID
-  const useProblem = (id: number) => {
+  const useProblem = (id: string) => {
     return useQuery({
       queryKey: ['problem', id],
       queryFn: () => problemsService.getProblem(id),
@@ -162,7 +163,7 @@ export const useProblems = () => {
 
   return {
     // State
-    problems: problemsData?.problems || [],
+    problems: problemsData?.data || [],
     pagination: problemsData?.pagination,
     filters,
     currentPage,

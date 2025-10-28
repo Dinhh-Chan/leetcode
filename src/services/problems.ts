@@ -1,32 +1,15 @@
 import { apiService } from './api';
-import { API_ENDPOINTS } from '@/constants';
-import { Problem, Submission, FilterOptions, CodeSubmission, ApiResponse } from '@/types';
-
-export interface ProblemsListResponse {
-  problems: Problem[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
-export interface SubmissionResponse {
-  submission: Submission;
-  result: {
-    status: string;
-    runtime: number;
-    memory: number;
-    testCases: {
-      passed: number;
-      total: number;
-    };
-    error?: string;
-  };
-}
+import { API_ENDPOINTS, API_CONFIG } from '@/constants';
+import axios from 'axios';
+import { Problem, ProblemsListApiResponse, ProblemsListResponse, SubmissionResponse } from './types/problems';
+import { FilterOptions, CodeSubmission, Submission } from '@/types';
 
 class ProblemsService {
+  // Get auth token
+  private getToken(): string | null {
+    return localStorage.getItem('auth-token');
+  }
+
   // Get problems list with filters and pagination
   async getProblems(
     page: number = 1,
@@ -56,14 +39,44 @@ class ProblemsService {
       }
     }
 
-    return apiService.get<ProblemsListResponse>(
-      `${API_ENDPOINTS.problems.list}?${params.toString()}`
+    const token = this.getToken();
+    const response = await axios.get<ProblemsListApiResponse>(
+      `${API_CONFIG.baseURL}${API_ENDPOINTS.problems.list}?${params.toString()}`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      }
     );
+
+    // Transform API response to match expected format
+    const apiResponse = response.data;
+    return {
+      success: apiResponse.success,
+      data: apiResponse.data.result,
+      pagination: {
+        page: apiResponse.data.page,
+        limit: apiResponse.data.limit,
+        total: apiResponse.data.total,
+        totalPages: Math.ceil(apiResponse.data.total / apiResponse.data.limit),
+      },
+    } as ProblemsListResponse;
   }
 
   // Get problem by ID
-  async getProblem(id: number): Promise<Problem> {
-    return await apiService.get<Problem>(API_ENDPOINTS.problems.detail(id));
+  async getProblem(id: string): Promise<Problem> {
+    const token = this.getToken();
+    const response = await axios.get<{ data: Problem; success: boolean }>(
+      `${API_CONFIG.baseURL}${API_ENDPOINTS.problems.detail(Number(id))}`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      }
+    );
+    return response.data.data;
   }
 
   // Get problem by slug

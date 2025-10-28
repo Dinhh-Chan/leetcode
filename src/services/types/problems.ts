@@ -1,19 +1,43 @@
 // Problems service types
+export interface Topic {
+  _id: string;
+  name?: string;
+  [key: string]: any;
+}
+
+export interface SubTopic {
+  _id: string;
+  name?: string;
+  [key: string]: any;
+}
+
+export interface TestCase {
+  _id?: string;
+  input?: string;
+  expected_output?: string;
+  [key: string]: any;
+}
+
 export interface Problem {
-  id: number;
-  title: string;
-  slug: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
-  acceptance: number;
-  status?: 'solved' | 'attempted' | null;
-  tags: string[];
+  _id: string;
+  topic_id: string;
+  sub_topic_id: string;
+  name: string;
   description: string;
-  examples: ProblemExample[];
-  constraints: string[];
-  hints?: string[];
-  isPremium?: boolean;
-  likes: number;
-  dislikes: number;
+  difficulty: number; // 1 = Easy, 2 = Medium, 3 = Hard
+  code_template: string;
+  guidelines?: string;
+  solution?: string;
+  time_limit_ms: number;
+  memory_limit_mb: number;
+  number_of_tests: number;
+  is_public: boolean;
+  is_active: boolean;
+  topic?: Topic;
+  sub_topic?: SubTopic;
+  test_cases?: TestCase[];
+  sets?: string;
+  steps?: string;
 }
 
 export interface ProblemExample {
@@ -48,8 +72,22 @@ export interface CodeSubmission {
   code: string;
 }
 
+// API Response from backend
+export interface ProblemsListApiResponse {
+  success: boolean;
+  data: {
+    page: number;
+    skip: number;
+    limit: number;
+    total: number;
+    result: Problem[];
+  };
+}
+
+// Transformed response for frontend use
 export interface ProblemsListResponse {
-  problems: Problem[];
+  success: boolean;
+  data: Problem[];
   pagination: {
     page: number;
     limit: number;

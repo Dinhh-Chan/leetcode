@@ -27,10 +27,14 @@ export const API_ENDPOINTS = {
   },
   // Problems
   problems: {
-    list: '/problems',
+    list: '/problems/list/basic',
     detail: (id: number) => `/problems/${id}`,
     submit: '/problems/submit',
     submissions: (problemId: number) => `/problems/${problemId}/submissions`,
+  },
+  // Courses
+  courses: {
+    active: '/courses/active',
   },
   // Contests
   contests: {
