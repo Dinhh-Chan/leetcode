@@ -31,6 +31,7 @@ export const API_ENDPOINTS = {
     detail: (id: number) => `/problems/${id}`,
     submit: '/problems/submit',
     submissions: (problemId: number) => `/problems/${problemId}/submissions`,
+    bySubTopic: (subTopicId: string) => `/problems/by-sub-topic/${subTopicId}`,
   },
   // Courses
   courses: {
@@ -49,6 +50,10 @@ export const API_ENDPOINTS = {
     detail: (id: string) => `/discussions/${id}`,
     create: '/discussions',
     comment: (id: string) => `/discussions/${id}/comments`,
+  },
+  // Sub-Topics
+  subTopics: {
+    many: '/sub-topics/many',
   },
   // Users
   users: {

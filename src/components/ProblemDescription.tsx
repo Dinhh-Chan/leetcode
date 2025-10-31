@@ -1,6 +1,8 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+// import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ThumbsUp, ThumbsDown, MessageSquare, Eye, Lightbulb } from "lucide-react";
+import KMark from "@/components/KMark";
 
 interface ProblemDescriptionProps {
   problemData: {
@@ -8,11 +10,8 @@ interface ProblemDescriptionProps {
     title: string;
     difficulty: "Easy" | "Med" | "Hard";
     description: string;
-    examples: Array<{
-      input: string;
-      output: string;
-      explanation?: string;
-    }>;
+    guidelines?: string;
+    solution?: string;
     constraints: string[];
     followUp?: string;
     topics: string[];
@@ -84,37 +83,9 @@ const ProblemDescription = ({ problemData }: ProblemDescriptionProps) => {
       </div>
 
       <div className="prose prose-sm max-w-none">
-        <p className="text-foreground">{problemData.description}</p>
+        <KMark content={problemData.description} />
 
-        {problemData.examples.map((example, index) => (
-          <div key={index} className="my-4 rounded-lg bg-muted p-4">
-            <p className="mb-2 font-semibold text-foreground">Example {index + 1}:</p>
-            <div className="space-y-1 font-mono text-sm">
-              <p>
-                <strong>Input:</strong> {example.input}
-              </p>
-              <p>
-                <strong>Output:</strong> {example.output}
-              </p>
-              {example.explanation && (
-                <p>
-                  <strong>Explanation:</strong> {example.explanation}
-                </p>
-              )}
-            </div>
-          </div>
-        ))}
-
-        <div className="my-6">
-          <p className="mb-2 font-semibold text-foreground">Constraints:</p>
-          <ul className="list-disc space-y-1 pl-5 text-foreground">
-            {problemData.constraints.map((constraint, index) => (
-              <li key={index} className="text-sm">
-                {constraint}
-              </li>
-            ))}
-          </ul>
-        </div>
+        {/* Testcases moved to CodeEditor bottom panel */}
 
         {problemData.followUp && (
           <div className="my-6">

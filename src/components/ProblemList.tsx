@@ -56,7 +56,7 @@ const ProblemList = memo(() => {
         title: name,
         difficultyLabel: getDifficultyLabel(difficulty),
         tags: [topic?.topic_name, sub_topic?.sub_topic_name].filter(Boolean) as string[],
-        status: null, // Status will be added later when we have submission data
+        status: problem.is_done ? PROBLEM_STATUS.SOLVED : null,
         name,
         difficulty,
         topic,
@@ -154,6 +154,9 @@ const ProblemList = memo(() => {
                   >
                     {problem.title}
                   </Link>
+                  {problem.is_done && (
+                    <span className="ml-2 text-[10px] font-medium text-green-600">✓ Solved</span>
+                  )}
                   {!problem.is_public && (
                     <Badge variant="secondary" className="text-xs">Private</Badge>
                   )}

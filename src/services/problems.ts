@@ -64,11 +64,11 @@ class ProblemsService {
     } as ProblemsListResponse;
   }
 
-  // Get problem by ID
+  // Get problem by ID (string id supported)
   async getProblem(id: string): Promise<Problem> {
     const token = this.getToken();
     const response = await axios.get<{ data: Problem; success: boolean }>(
-      `${API_CONFIG.baseURL}${API_ENDPOINTS.problems.detail(Number(id))}`,
+      `${API_CONFIG.baseURL}/problems/${id}`,
       {
         headers: {
           'Content-Type': 'application/json',
@@ -76,7 +76,7 @@ class ProblemsService {
         },
       }
     );
-    return response.data.data;
+    return response.data.data as unknown as Problem;
   }
 
   // Get problem by slug
@@ -219,6 +219,57 @@ class ProblemsService {
     return apiService.get<ProblemsListResponse>(
       `/problems/tag/${tag}?${params.toString()}`
     );
+  }
+
+  // Get problems by sub-topic with filters and pagination
+  async getProblemsBySubTopic(
+    subTopicId: string,
+    options: {
+      page?: number;
+      limit?: number;
+      q?: string;
+      difficulty?: string; // e.g. "1,2,3"
+      solved?: string; // "1" | "0"
+      sort?: string; // JSON string, e.g. '{"difficulty":1}'
+    } = {}
+  ): Promise<ProblemsListResponse> {
+    const params = new URLSearchParams();
+    if (options.page) params.set('page', String(options.page));
+    if (options.limit) params.set('limit', String(options.limit));
+    if (options.q) params.set('q', options.q);
+    if (options.difficulty) params.set('difficulty', options.difficulty);
+    if (options.solved !== undefined) params.set('solved', options.solved);
+    if (options.sort) params.set('sort', options.sort);
+
+    // Expect API returns shape similar to basic list; fallback if not
+    const url = `${API_ENDPOINTS.problems.bySubTopic(subTopicId)}${params.toString() ? `?${params.toString()}` : ''}`;
+    try {
+      const res = await axios.get<ProblemsListApiResponse>(`${API_CONFIG.baseURL}${url}`);
+      const api = res.data;
+      return {
+        success: api.success,
+        data: api.data.result,
+        pagination: {
+          page: api.data.page,
+          limit: api.data.limit,
+          total: api.data.total,
+          totalPages: Math.ceil(api.data.total / api.data.limit),
+        },
+      };
+    } catch {
+      // Fallback for API returning {success, data: Problem[]}
+      const data = await apiService.get<{ success: boolean; data: Problem[] }>(url);
+      return {
+        success: true,
+        data: (data as any).data || (data as any),
+        pagination: {
+          page: Number(options.page || 1),
+          limit: Number(options.limit || 20),
+          total: ((data as any).data || (data as any))?.length || 0,
+          totalPages: 1,
+        },
+      } as ProblemsListResponse;
+    }
   }
 }
 

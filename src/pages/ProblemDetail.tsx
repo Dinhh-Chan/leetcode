@@ -1,52 +1,68 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronLeft, ChevronRight, List, Settings, Bell } from "lucide-react";
 import ProblemDescription from "@/components/ProblemDescription";
 import CodeEditor from "@/components/CodeEditor";
+import { problemsService } from "@/services";
+import { Problem as ApiProblem } from "@/services/types/problems";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import AiAssistantPanel from "@/components/AiAssistantPanel";
 
 const ProblemDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("description");
+  const [problem, setProblem] = useState<ApiProblem | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data - in real app, fetch from API
-  const problemData = {
-    id: Number(id) || 1,
-    title: "Two Sum",
-    difficulty: "Easy" as const,
-    description: "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice. You can return the answer in any order.",
-    examples: [
-      {
-        input: "nums = [2,7,11,15], target = 9",
-        output: "[0,1]",
-        explanation: "Because nums[0] + nums[1] == 9, we return [0, 1].",
-      },
-      {
-        input: "nums = [3,2,4], target = 6",
-        output: "[1,2]",
-      },
-      {
-        input: "nums = [3,3], target = 6",
-        output: "[0,1]",
-      },
-    ],
-    constraints: [
-      "2 <= nums.length <= 10⁴",
-      "-10⁹ <= nums[i] <= 10⁹",
-      "-10⁹ <= target <= 10⁹",
-      "Only one valid answer exists.",
-    ],
-    followUp: "Can you come up with an algorithm that is less than O(n²) time complexity?",
-    topics: ["Array", "Hash Table"],
-    companies: ["Amazon", "Google", "Microsoft"],
-    likes: 64800,
-    dislikes: 2100,
-    comments: 1600,
-    views: 1895,
-    solved: true,
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        setIsLoading(true);
+        const data = await problemsService.getProblem(id as string);
+        if (mounted) setProblem(data);
+      } catch (e: any) {
+        if (mounted) setError(e?.message || "Failed to load problem");
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+    if (id) load();
+    return () => {
+      mounted = false;
+    };
+  }, [id]);
+
+  const mapDifficulty = (d: number): "Easy" | "Med" | "Hard" => {
+    if (d <= 2) return "Easy";
+    if (d === 3) return "Med";
+    return "Hard";
   };
+
+  const problemData = useMemo(() => {
+    if (!problem) return null;
+    return {
+      id: 1,
+      title: problem.name,
+      difficulty: mapDifficulty(problem.difficulty),
+      description: problem.description,
+      guidelines: problem.guidelines,
+      solution: problem.solution,
+      constraints: [] as string[],
+      followUp: undefined,
+      topics: problem.topic?.topic_name ? [problem.topic.topic_name] : [] as string[],
+      companies: [] as string[],
+      likes: 0,
+      dislikes: 0,
+      comments: 0,
+      views: 0,
+      solved: (problem as any).is_done || false,
+    } as const;
+  }, [problem]);
 
   return (
     <div className="flex h-screen flex-col">
@@ -88,46 +104,63 @@ const ProblemDetail = () => {
 
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Panel - Problem Description */}
-        <div className="w-1/2 border-r">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex h-full flex-col">
-            <TabsList className="h-10 w-full justify-start rounded-none border-b bg-transparent px-4">
-              <TabsTrigger value="description" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
-                Description
-              </TabsTrigger>
-              <TabsTrigger value="editorial" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
-                Editorial
-              </TabsTrigger>
-              <TabsTrigger value="solutions" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
-                Solutions
-              </TabsTrigger>
-              <TabsTrigger value="submissions" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
-                Submissions
-              </TabsTrigger>
-            </TabsList>
+        <ResizablePanelGroup direction="horizontal" className="w-full">
+          <ResizablePanel defaultSize={45} minSize={25} maxSize={70} className="border-r">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex h-full flex-col">
+              <TabsList className="h-10 w-full justify-start rounded-none border-b bg-transparent px-4">
+                <TabsTrigger value="description" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
+                  Description
+                </TabsTrigger>
+                <TabsTrigger value="editorial" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
+                  Editorial
+                </TabsTrigger>
+                <TabsTrigger value="solutions" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
+                  Solutions
+                </TabsTrigger>
+                <TabsTrigger value="submissions" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
+                  Submissions
+                </TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="description" className="m-0 flex-1 overflow-hidden">
-              <ProblemDescription problemData={problemData} />
-            </TabsContent>
+              <TabsContent value="description" className="m-0 flex-1 overflow-hidden p-4">
+                {isLoading && (
+                  <div className="p-6 text-sm text-muted-foreground">Loading...</div>
+                )}
+                {error && (
+                  <div className="p-6 text-sm text-destructive">{error}</div>
+                )}
+                {problemData && <ProblemDescription problemData={problemData} />}
+              </TabsContent>
 
-            <TabsContent value="editorial" className="m-0 flex-1 overflow-auto p-6">
-              <p className="text-muted-foreground">Editorial content coming soon...</p>
-            </TabsContent>
+              <TabsContent value="editorial" className="m-0 flex-1 overflow-auto p-6">
+                <p className="text-muted-foreground">Editorial content coming soon...</p>
+              </TabsContent>
 
-            <TabsContent value="solutions" className="m-0 flex-1 overflow-auto p-6">
-              <p className="text-muted-foreground">Community solutions coming soon...</p>
-            </TabsContent>
+              <TabsContent value="solutions" className="m-0 flex-1 overflow-auto p-6">
+                <p className="text-muted-foreground">Community solutions coming soon...</p>
+              </TabsContent>
 
-            <TabsContent value="submissions" className="m-0 flex-1 overflow-auto p-6">
-              <p className="text-muted-foreground">Your submissions will appear here...</p>
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        {/* Right Panel - Code Editor */}
-        <div className="w-1/2">
-          <CodeEditor />
-        </div>
+              <TabsContent value="submissions" className="m-0 flex-1 overflow-auto p-6">
+                <p className="text-muted-foreground">Your submissions will appear here...</p>
+              </TabsContent>
+            </Tabs>
+          </ResizablePanel>
+          <ResizableHandle withHandle className="bg-border" />
+          <ResizablePanel defaultSize={35} minSize={20} maxSize={60} className="border-r">
+            <CodeEditor
+              initialCode={''}
+              language="python"
+              testCases={(problem?.test_cases || []).map((tc: any) => ({
+                input: tc.input_data || '',
+                output: tc.expected_output || '',
+              }))}
+            />
+          </ResizablePanel>
+          <ResizableHandle withHandle className="bg-border" />
+          <ResizablePanel defaultSize={20} minSize={15}>
+            <AiAssistantPanel />
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ import SkipToContent from "@/components/SkipToContent";
 const Index = lazy(() => import("./pages/Index"));
 const Problems = lazy(() => import("./pages/Problems"));
 const ProblemDetail = lazy(() => import("./pages/ProblemDetail"));
+const ProblemsBySubTopic = lazy(() => import("./pages/ProblemsBySubTopic"));
 const Contest = lazy(() => import("./pages/Contest"));
 const Discuss = lazy(() => import("./pages/Discuss"));
 const Profile = lazy(() => import("./pages/Profile"));
@@ -63,6 +64,7 @@ const App = () => (
                   
                   {/* Routes without authentication */}
                   <Route path="/problems" element={<Problems />} />
+                  <Route path="/problems/by-sub-topic/:subTopicId" element={<ProblemsBySubTopic />} />
                   <Route path="/problems/:id" element={<ProblemDetail />} />
                   <Route path="/contest" element={<Contest />} />
                   <Route path="/discuss" element={<Discuss />} />

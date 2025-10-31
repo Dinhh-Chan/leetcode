@@ -33,6 +33,8 @@ export interface Problem {
   number_of_tests: number;
   is_public: boolean;
   is_active: boolean;
+  // Added from API to indicate if current user solved the problem
+  is_done?: boolean;
   topic?: Topic;
   sub_topic?: SubTopic;
   test_cases?: TestCase[];
