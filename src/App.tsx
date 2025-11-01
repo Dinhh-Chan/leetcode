@@ -20,6 +20,7 @@ const Discuss = lazy(() => import("./pages/Discuss"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
+const SubmissionDetail = lazy(() => import("./pages/SubmissionDetail"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Create QueryClient with default options
@@ -69,6 +70,7 @@ const App = () => (
                   <Route path="/contest" element={<Contest />} />
                   <Route path="/discuss" element={<Discuss />} />
                   <Route path="/profile" element={<Profile />} />
+                  <Route path="/submissions/:id" element={<SubmissionDetail />} />
                   
                   {/* Catch-all route */}
                   <Route path="*" element={<NotFound />} />

@@ -9,10 +9,12 @@ import { problemsService } from "@/services";
 import { Problem as ApiProblem } from "@/services/types/problems";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import AiAssistantPanel from "@/components/AiAssistantPanel";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 const ProblemDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuthContext();
   const [activeTab, setActiveTab] = useState("description");
   const [problem, setProblem] = useState<ApiProblem | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -154,6 +156,8 @@ const ProblemDetail = () => {
                 input: tc.input_data || '',
                 output: tc.expected_output || '',
               }))}
+              problemId={problem?._id}
+              studentId={user?._id}
             />
           </ResizablePanel>
           <ResizableHandle withHandle className="bg-border" />

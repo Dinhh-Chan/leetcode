@@ -1,5 +1,6 @@
 declare module '@monaco-editor/react' {
   import { ComponentType } from 'react';
+  import * as monaco from 'monaco-editor';
   type MonacoEditorProps = {
     height?: string | number;
     defaultLanguage?: string;
@@ -9,6 +10,7 @@ declare module '@monaco-editor/react' {
     theme?: string;
     options?: any;
     onChange?: (value?: string) => void;
+    onMount?: (editor: monaco.editor.IStandaloneCodeEditor, monacoInstance: typeof monaco) => void;
   };
   const Editor: ComponentType<MonacoEditorProps>;
   export default Editor;
