@@ -94,7 +94,7 @@ const ProblemList = memo(() => {
     <div className="space-y-4">
       {/* Header with sorting */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Problems</h2>
+        <h2 className="text-lg font-semibold">Bài tập</h2>
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -102,7 +102,7 @@ const ProblemList = memo(() => {
             onClick={() => handleSort('title')}
             className={cn(sortBy === 'title' && 'bg-muted')}
           >
-            Title {sortBy === 'title' && (sortOrder === 'asc' ? '↑' : '↓')}
+            Tiêu đề {sortBy === 'title' && (sortOrder === 'asc' ? '↑' : '↓')}
           </Button>
           <Button
             variant="ghost"
@@ -110,7 +110,7 @@ const ProblemList = memo(() => {
             onClick={() => handleSort('acceptance')}
             className={cn(sortBy === 'acceptance' && 'bg-muted')}
           >
-            Acceptance {sortBy === 'acceptance' && (sortOrder === 'asc' ? '↑' : '↓')}
+            Tỷ lệ đúng {sortBy === 'acceptance' && (sortOrder === 'asc' ? '↑' : '↓')}
           </Button>
           <Button
             variant="ghost"
@@ -118,7 +118,7 @@ const ProblemList = memo(() => {
             onClick={() => handleSort('difficulty')}
             className={cn(sortBy === 'difficulty' && 'bg-muted')}
           >
-            Difficulty {sortBy === 'difficulty' && (sortOrder === 'asc' ? '↑' : '↓')}
+            Độ khó {sortBy === 'difficulty' && (sortOrder === 'asc' ? '↑' : '↓')}
           </Button>
         </div>
       </div>
@@ -128,9 +128,9 @@ const ProblemList = memo(() => {
         {displayProblems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
             <TrendingUp className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No problems found</h3>
+            <h3 className="text-lg font-semibold mb-2">Không tìm thấy bài tập</h3>
             <p className="text-muted-foreground text-center">
-              Try adjusting your filters or search criteria
+              Hãy thử điều chỉnh bộ lọc hoặc tiêu chí tìm kiếm
             </p>
           </div>
         ) : (
@@ -155,10 +155,10 @@ const ProblemList = memo(() => {
                     {problem.title}
                   </Link>
                   {problem.is_done && (
-                    <span className="ml-2 text-[10px] font-medium text-green-600">✓ Solved</span>
+                    <span className="ml-2 text-[10px] font-medium text-green-600">✓ Đã giải</span>
                   )}
                   {!problem.is_public && (
-                    <Badge variant="secondary" className="text-xs">Private</Badge>
+                    <Badge variant="secondary" className="text-xs">Riêng tư</Badge>
                   )}
                 </div>
                 <div className="flex items-center gap-4 mt-1 flex-wrap">
@@ -183,7 +183,7 @@ const ProblemList = memo(() => {
                 </div>
               </div>
               <div className="text-sm text-muted-foreground w-16 text-center">
-                {problem.number_of_tests || 0} tests
+                {problem.number_of_tests || 0} test
               </div>
               <div className={cn("w-20 text-sm font-medium text-center", getDifficultyColor(problem.difficulty))}>
                 {problem.difficultyLabel}
@@ -207,7 +207,7 @@ const ProblemList = memo(() => {
       {pagination && pagination.totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Showing {((currentPage - 1) * pagination.limit) + 1} to {Math.min(currentPage * pagination.limit, pagination.total)} of {pagination.total} results
+            Hiển thị {((currentPage - 1) * pagination.limit) + 1} đến {Math.min(currentPage * pagination.limit, pagination.total)} trong tổng số {pagination.total} kết quả
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -216,10 +216,10 @@ const ProblemList = memo(() => {
               onClick={() => updatePagination(currentPage - 1)}
               disabled={currentPage === 1}
             >
-              Previous
+              Trước
             </Button>
             <span className="text-sm">
-              Page {currentPage} of {pagination.totalPages}
+              Trang {currentPage} / {pagination.totalPages}
             </span>
             <Button
               variant="outline"
@@ -227,7 +227,7 @@ const ProblemList = memo(() => {
               onClick={() => updatePagination(currentPage + 1)}
               disabled={currentPage === pagination.totalPages}
             >
-              Next
+              Sau
             </Button>
           </div>
         </div>

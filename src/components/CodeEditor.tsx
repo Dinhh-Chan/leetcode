@@ -228,7 +228,7 @@ const CodeEditor = ({ initialCode = "", language = "python", testCases = [], pro
         <div className="flex items-center gap-2">
           <Select value={selectedLangId?.toString() || undefined} onValueChange={(v) => setSelectedLangId(Number(v))}>
             <SelectTrigger className="w-56">
-              <SelectValue placeholder={isLoadingLang ? 'Loading...' : 'Select language'} />
+              <SelectValue placeholder={isLoadingLang ? 'Đang tải...' : 'Chọn ngôn ngữ'} />
             </SelectTrigger>
             <SelectContent>
               {(languages || []).map((lang) => (
@@ -239,16 +239,16 @@ const CodeEditor = ({ initialCode = "", language = "python", testCases = [], pro
             </SelectContent>
           </Select>
           <Button variant="ghost" size="sm">
-            Auto
+            Tự động
           </Button>
           <div className="ml-2 hidden md:flex gap-2">
             <Button variant="outline" size="sm" className="gap-1" onClick={handleRun} disabled={isRunning}>
               {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-              Run
+              Chạy
             </Button>
             <Button size="sm" className="gap-1 bg-success hover:bg-success/90" disabled={isRunning || isSubmitting} onClick={handleSubmit}>
               {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-              Submit
+              Nộp bài
             </Button>
           </div>
         </div>
@@ -293,10 +293,10 @@ const CodeEditor = ({ initialCode = "", language = "python", testCases = [], pro
             <div className="flex items-center justify-between border-b px-2">
               <TabsList className="h-9">
                 <TabsTrigger value="testcase" className="text-xs">
-                  Testcase
+                  Test case
                 </TabsTrigger>
                 <TabsTrigger value="result" className="text-xs">
-                  Test Result
+                  Kết quả
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -311,18 +311,18 @@ const CodeEditor = ({ initialCode = "", language = "python", testCases = [], pro
                     }}>
                       <TabsList className="h-8 flex-wrap">
                         {testCases.map((_, i) => (
-                          <TabsTrigger key={i} value={`tc-${i}`} className="text-xs">Testcase {i+1}</TabsTrigger>
+                          <TabsTrigger key={i} value={`tc-${i}`} className="text-xs">Test case {i+1}</TabsTrigger>
                         ))}
                       </TabsList>
                     </Tabs>
                   </div>
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                      <div className="mb-2 text-xs font-medium text-muted-foreground">Input</div>
+                      <div className="mb-2 text-xs font-medium text-muted-foreground">Đầu vào</div>
                       <pre className="kmark-pre overflow-auto rounded-md border p-3" style={{ whiteSpace: 'pre-wrap', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>{testCases[selectedTestIdx]?.input || ''}</pre>
                     </div>
                     <div>
-                      <div className="mb-2 text-xs font-medium text-muted-foreground">Expected Output</div>
+                      <div className="mb-2 text-xs font-medium text-muted-foreground">Đầu ra mong đợi</div>
                       <pre className="kmark-pre overflow-auto rounded-md border p-3" style={{ whiteSpace: 'pre-wrap', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>{testCases[selectedTestIdx]?.output || ''}</pre>
                     </div>
                   </div>
@@ -372,7 +372,7 @@ const CodeEditor = ({ initialCode = "", language = "python", testCases = [], pro
                           
                           return (
                             <TabsTrigger key={i} value={`result-${i}`} className="text-xs relative">
-                              Testcase {i+1}
+                              Test case {i+1}
                               <span className={`absolute top-0 right-0 -mt-1 -mr-1 w-2 h-2 rounded-full ${indicatorColor}`}></span>
                             </TabsTrigger>
                           );
@@ -409,7 +409,7 @@ const CodeEditor = ({ initialCode = "", language = "python", testCases = [], pro
                     return (
                       <div key={idx} className="mb-4 rounded-md border p-3">
                         <div className="mb-3 flex items-center justify-between">
-                          <span className="text-sm font-medium">Test Case {idx + 1}</span>
+                          <span className="text-sm font-medium">Test case {idx + 1}</span>
                           <Badge className={badgeColor}>
                             {badgeText}
                           </Badge>
@@ -417,29 +417,29 @@ const CodeEditor = ({ initialCode = "", language = "python", testCases = [], pro
                         
                         <div className="space-y-2">
                           <div>
-                            <div className="mb-1 text-xs font-medium text-muted-foreground">Input:</div>
+                            <div className="mb-1 text-xs font-medium text-muted-foreground">Đầu vào:</div>
                             <pre className="kmark-pre overflow-auto rounded border p-2 text-xs max-h-32" style={{ whiteSpace: 'pre-wrap', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>
                               {testCases[idx]?.input || ''}
                             </pre>
                           </div>
                           
                           <div>
-                            <div className="mb-1 text-xs font-medium text-muted-foreground">Expected Output:</div>
+                            <div className="mb-1 text-xs font-medium text-muted-foreground">Đầu ra mong đợi:</div>
                             <pre className="kmark-pre overflow-auto rounded border p-2 text-xs max-h-32" style={{ whiteSpace: 'pre-wrap', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>
                               {testCases[idx]?.output || ''}
                             </pre>
                           </div>
                           
                           <div>
-                            <div className="mb-1 text-xs font-medium text-muted-foreground">Actual Output:</div>
+                            <div className="mb-1 text-xs font-medium text-muted-foreground">Đầu ra thực tế:</div>
                             <pre className={`kmark-pre overflow-auto rounded border p-2 text-xs max-h-32 ${isPassed ? 'text-success' : 'text-destructive'}`} style={{ whiteSpace: 'pre-wrap', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>
-                              {result.stdout || '(no output)'}
+                              {result.stdout || '(không có đầu ra)'}
                             </pre>
                           </div>
                           
                           {result.stderr && (
                             <div>
-                              <div className="mb-1 text-xs font-medium text-muted-foreground">Stderr:</div>
+                              <div className="mb-1 text-xs font-medium text-muted-foreground">Lỗi:</div>
                               <pre className="kmark-pre overflow-auto rounded border border-destructive p-2 text-xs text-destructive max-h-32" style={{ whiteSpace: 'pre-wrap', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>
                                 {result.stderr}
                               </pre>
@@ -448,7 +448,7 @@ const CodeEditor = ({ initialCode = "", language = "python", testCases = [], pro
                           
                           {result.compile_output && (
                             <div>
-                              <div className="mb-1 text-xs font-medium text-muted-foreground">Compile Output:</div>
+                              <div className="mb-1 text-xs font-medium text-muted-foreground">Đầu ra biên dịch:</div>
                               <pre className="kmark-pre overflow-auto rounded border border-warning p-2 text-xs text-warning max-h-32" style={{ whiteSpace: 'pre-wrap', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>
                                 {result.compile_output}
                               </pre>
@@ -457,7 +457,7 @@ const CodeEditor = ({ initialCode = "", language = "python", testCases = [], pro
                           
                           {result.message && (
                             <div>
-                              <div className="mb-1 text-xs font-medium text-muted-foreground">Message:</div>
+                              <div className="mb-1 text-xs font-medium text-muted-foreground">Thông báo:</div>
                               <pre className="kmark-pre overflow-auto rounded border p-2 text-xs max-h-32" style={{ whiteSpace: 'pre-wrap', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>
                                 {result.message}
                               </pre>
@@ -466,8 +466,8 @@ const CodeEditor = ({ initialCode = "", language = "python", testCases = [], pro
                           
                           <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
                             <span>Trạng thái: <span className="font-semibold">{result.status.description}</span></span>
-                            <span>Time: <span className="font-semibold">{result.time ? `${result.time}s` : '-'}</span></span>
-                            <span>Memory: <span className="font-semibold">{result.memory ? `${result.memory}KB` : '-'}</span></span>
+                            <span>Thời gian: <span className="font-semibold">{result.time ? `${result.time}s` : '-'}</span></span>
+                            <span>Bộ nhớ: <span className="font-semibold">{result.memory ? `${result.memory}KB` : '-'}</span></span>
                           </div>
                         </div>
                       </div>
@@ -475,9 +475,9 @@ const CodeEditor = ({ initialCode = "", language = "python", testCases = [], pro
                   })}
                 </>
               ) : (
-                <div className="text-sm text-muted-foreground">
-                  Run your code to see results
-                </div>
+              <div className="text-sm text-muted-foreground">
+                  Chạy code để xem kết quả
+              </div>
               )}
             </TabsContent>
           </Tabs>
@@ -486,15 +486,15 @@ const CodeEditor = ({ initialCode = "", language = "python", testCases = [], pro
 
       {/* Footer */}
       <div className="flex items-center justify-between border-t bg-card p-3">
-        <div className="text-xs text-muted-foreground">Saved</div>
+        <div className="text-xs text-muted-foreground">Đã lưu</div>
         <div className="flex gap-2 md:hidden">
           <Button variant="outline" size="sm" className="gap-1" onClick={handleRun} disabled={isRunning}>
             {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-            Run
+            Chạy
           </Button>
           <Button size="sm" className="gap-1 bg-success hover:bg-success/90" disabled={isRunning || isSubmitting} onClick={handleSubmit}>
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-            Submit
+            Nộp bài
           </Button>
         </div>
       </div>

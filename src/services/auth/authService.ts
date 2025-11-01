@@ -134,18 +134,29 @@ class AuthService {
       throw new Error('No refresh token available');
     }
 
-    const response = await apiService.post<LoginResponse>(
+    // Check if refresh token is expired
+    const refreshExpireAt = localStorage.getItem('refresh-expire-at');
+    if (refreshExpireAt) {
+      const now = Date.now();
+      const expireTime = parseInt(refreshExpireAt);
+      if (now >= expireTime) {
+        throw new Error('Refresh token expired');
+      }
+    }
+
+    // Use apiService which unwraps response.data.data
+    const tokens = await apiService.post<AuthTokens>(
       API_ENDPOINTS.auth.refresh,
       { refreshToken }
     );
 
     // Update stored tokens
-    localStorage.setItem('auth-token', response.data.accessToken);
-    localStorage.setItem('refresh-token', response.data.refreshToken);
-    localStorage.setItem('access-expire-at', response.data.accessExpireAt.toString());
-    localStorage.setItem('refresh-expire-at', response.data.refreshExpireAt.toString());
+    localStorage.setItem('auth-token', tokens.accessToken);
+    localStorage.setItem('refresh-token', tokens.refreshToken);
+    localStorage.setItem('access-expire-at', tokens.accessExpireAt.toString());
+    localStorage.setItem('refresh-expire-at', tokens.refreshExpireAt.toString());
 
-    return response.data;
+    return tokens;
   }
 }
 

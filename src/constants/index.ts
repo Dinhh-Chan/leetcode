@@ -201,10 +201,10 @@ export const SUCCESS_MESSAGES = {
 
 // Navigation items
 export const NAV_ITEMS = [
-  { label: 'Explore', path: '/', exact: true },
-  { label: 'Problems', path: '/problems' },
-  { label: 'Contest', path: '/contest' },
-  { label: 'Discuss', path: '/discuss' },
-  { label: 'Interview', path: '/interview', hasDropdown: true },
-  { label: 'Store', path: '/store', hasDropdown: true },
+  { label: 'Khám phá', path: '/', exact: true },
+  { label: 'Bài tập', path: '/problems' },
+  { label: 'Cuộc thi', path: '/contest' },
+  { label: 'Thảo luận', path: '/discuss' },
+  { label: 'Phỏng vấn', path: '/interview', hasDropdown: true },
+  { label: 'Cửa hàng', path: '/store', hasDropdown: true },
 ] as const;

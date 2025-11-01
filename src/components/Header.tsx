@@ -60,7 +60,7 @@ const Header = memo(() => {
               }`}
             >
               {item.label}
-              {item.hasDropdown && <span className="ml-1">▾</span>}
+              {'hasDropdown' in item && item.hasDropdown && <span className="ml-1">▾</span>}
             </Link>
           ))}
         </nav>
@@ -80,7 +80,14 @@ const Header = memo(() => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.avatar} alt={user?.username} />
+                    <AvatarImage 
+                      src="/default-avatar.png"
+                      alt={user?.username}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullname || user?.username || 'U')}&background=21791f&color=fff&size=128`;
+                      }}
+                    />
                     <AvatarFallback>
                       {(user?.fullname || user?.username)?.[0]?.toUpperCase()}
                     </AvatarFallback>
@@ -103,19 +110,19 @@ const Header = memo(() => {
                 <DropdownMenuItem asChild>
                   <Link to="/profile" className="flex items-center">
                     <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
+                    <span>Hồ sơ</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/settings" className="flex items-center">
                     <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
+                    <span>Cài đặt</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="flex items-center">
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
+                  <span>Đăng xuất</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -123,19 +130,19 @@ const Header = memo(() => {
             <>
               <Link to="/login">
                 <Button variant="ghost" size="sm">
-                  Sign In
+                  Đăng nhập
                 </Button>
               </Link>
               <Link to="/register">
                 <Button size="sm">
-                  Sign Up
+                  Đăng ký
                 </Button>
               </Link>
             </>
           )}
           
           <Button variant="ghost" className="text-primary hover:text-primary">
-            Premium
+            Nâng cấp
           </Button>
         </div>
       </div>

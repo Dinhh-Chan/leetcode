@@ -55,7 +55,7 @@ const ProblemDescription = ({ problemData }: ProblemDescriptionProps) => {
           
           {problemData.topics.length > 0 && (
             <div className="flex items-center gap-1">
-              <span className="text-xs text-muted-foreground">Topics:</span>
+              <span className="text-xs text-muted-foreground">Chủ đề:</span>
               {problemData.topics.map((topic) => (
                 <Badge key={topic} variant="outline" className="cursor-pointer hover:bg-muted">
                   {topic}

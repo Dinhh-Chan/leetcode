@@ -63,10 +63,14 @@ export const useAuth = () => {
           if (authService.isTokenExpired()) {
             try {
               await authService.refreshToken();
-            } catch (error) {
+              // Thông báo refresh token thành công
+              toast.success('Phiên đăng nhập đã được gia hạn tự động');
+            } catch (error: any) {
               // Refresh failed, logout user
+              console.error('Token refresh failed:', error);
               await authService.logout();
               queryClient.clear();
+              toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
             }
           }
         }

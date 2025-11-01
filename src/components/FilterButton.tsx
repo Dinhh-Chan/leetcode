@@ -3,7 +3,7 @@ import { Database, Terminal, GitBranch, Code2, BarChart3 } from "lucide-react";
 
 const FilterButtons = () => {
   const filters = [
-    { label: "All Topics", icon: null, active: true },
+    { label: "Tất cả chủ đề", icon: null, active: true },
     { label: "Algorithms", icon: Code2, active: false },
     { label: "Database", icon: Database, active: false },
     { label: "Shell", icon: Terminal, active: false },

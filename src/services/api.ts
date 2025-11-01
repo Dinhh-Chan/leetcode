@@ -2,6 +2,16 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } f
 import { API_CONFIG, API_ENDPOINTS, ERROR_MESSAGES } from '@/constants';
 import { ApiResponse, ApiError } from '@/types';
 
+// Extend Axios types
+declare module 'axios' {
+  export interface InternalAxiosRequestConfig {
+    _retry?: boolean;
+    metadata?: {
+      startTime?: Date;
+    };
+  }
+}
+
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_CONFIG.baseURL,
@@ -55,8 +65,13 @@ apiClient.interceptors.response.use(
             refreshToken,
           });
           
-          const { accessToken } = response.data.data;
+          const { accessToken, refreshToken: newRefreshToken, accessExpireAt, refreshExpireAt } = response.data.data;
+          
+          // Update all tokens
           localStorage.setItem('auth-token', accessToken);
+          localStorage.setItem('refresh-token', newRefreshToken);
+          localStorage.setItem('access-expire-at', accessExpireAt.toString());
+          localStorage.setItem('refresh-expire-at', refreshExpireAt.toString());
           
           // Retry original request
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
@@ -66,13 +81,21 @@ apiClient.interceptors.response.use(
         // Refresh failed, redirect to login
         localStorage.removeItem('auth-token');
         localStorage.removeItem('refresh-token');
+        localStorage.removeItem('access-expire-at');
+        localStorage.removeItem('refresh-expire-at');
+        localStorage.removeItem('user');
         window.location.href = '/login';
       }
     }
     
     // Handle other errors
+    const errorData = error.response?.data;
+    const errorMessage = (errorData && typeof errorData === 'object' && 'message' in errorData && typeof errorData.message === 'string')
+      ? errorData.message
+      : ((error as Error).message || ERROR_MESSAGES.UNKNOWN_ERROR);
+      
     const apiError: ApiError = {
-      message: error.response?.data?.message || error.message || ERROR_MESSAGES.UNKNOWN_ERROR,
+      message: errorMessage,
       code: error.response?.status?.toString() || 'UNKNOWN',
       details: error.response?.data,
     };

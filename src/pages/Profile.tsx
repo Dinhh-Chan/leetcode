@@ -1,45 +1,84 @@
-import { MapPin, Link as LinkIcon, Eye, MessageCircle, Star } from "lucide-react";
+import { useState } from "react";
+import { MapPin, Link as LinkIcon, Eye, MessageCircle, Star, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
+import { profileService } from "@/services/profile";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
-  const submissions = [
-    { name: "Coupon Code Validator", time: "3 months ago" },
-    { name: "Maximum Depth of Binary Tree", time: "3 months ago" },
-    { name: "Symmetric Tree", time: "3 months ago" },
-    { name: "Same Tree", time: "3 months ago" },
-    { name: "Binary Tree Inorder Traversal", time: "3 months ago" },
-    { name: "Pascal's Triangle", time: "9 months ago" },
-    { name: "Merge Sorted Array", time: "9 months ago" },
-    { name: "Reverse Prefix of Word", time: "9 months ago" },
-  ];
+  const { user } = useAuthContext();
+  const navigate = useNavigate();
+  const [showAllLanguages, setShowAllLanguages] = useState(false);
+  const [showAllSkills, setShowAllSkills] = useState(false);
+  
+  const { data: profile, isLoading, error } = useQuery({
+    queryKey: ['profile', user?._id],
+    queryFn: () => profileService.getProfile(),
+    enabled: !!user?._id,
+    retry: false,
+  });
 
-  const languages = [
-    { name: "Python3", solved: 79 },
-    { name: "MySQL", solved: 11 },
-    { name: "Python", solved: 9 },
-  ];
+  // Format recent AC submissions
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    
+    if (diffInDays === 0) return 'Today';
+    if (diffInDays === 1) return 'Yesterday';
+    if (diffInDays < 7) return `${diffInDays} days ago`;
+    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`;
+    if (diffInDays < 365) return `${Math.floor(diffInDays / 30)} months ago`;
+    return `${Math.floor(diffInDays / 365)} years ago`;
+  };
 
-  const skills = [
-    { category: "Advanced", items: [
-      { name: "Dynamic Programming", count: 3 },
-      { name: "Tree", count: 1 },
-    ]},
-    { category: "Intermediate", items: [
-      { name: "Math", count: 17 },
-      { name: "Hash Table", count: 13 },
-      { name: "Database", count: 11 },
-    ]},
-    { category: "Fundamental", items: [
-      { name: "Array", count: 55 },
-      { name: "String", count: 32 },
-      { name: "Sorting", count: 21 },
-    ]},
-  ];
+  // Calculate beats percentage
+  const totalSolved = (profile?.easy_ac?.solved || 0) + (profile?.medium_ac?.solved || 0) + (profile?.hard_ac?.solved || 0);
+  const totalProblems = (profile?.easy_ac?.total || 0) + (profile?.medium_ac?.total || 0) + (profile?.hard_ac?.total || 0);
+  const beatsPercentage = totalSolved > 0 ? Math.round((totalSolved / totalProblems) * 100) : 0;
+  
+  // Get avatar initials
+  const getInitials = (name?: string) => {
+    if (!name) return "U";
+    const parts = name.split(" ");
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex h-64 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !profile) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center text-destructive">
+            {error ? "Failed to load profile" : "Profile not found"}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -52,13 +91,16 @@ const Profile = () => {
             <Card>
               <CardContent className="p-6 text-center">
                 <Avatar className="mx-auto mb-4 h-24 w-24">
-                  <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=user123" />
-                  <AvatarFallback>DC</AvatarFallback>
+                  <AvatarImage src="/default-avatar.png" onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.fullname || profile.username)}&background=21791f&color=fff&size=128`;
+                  }} />
+                  <AvatarFallback>{getInitials(profile.fullname)}</AvatarFallback>
                 </Avatar>
-                <h2 className="mb-1 text-xl font-bold">Dinh Chan</h2>
-                <p className="mb-4 text-sm text-muted-foreground">Depth-Coder</p>
-                <p className="mb-4 text-2xl font-bold">Rank 1,308,821</p>
-                <Button className="w-full">Edit Profile</Button>
+                <h2 className="mb-1 text-xl font-bold">{profile.fullname}</h2>
+                <p className="mb-4 text-sm text-muted-foreground">{profile.username}</p>
+                <p className="mb-4 text-2xl font-bold">Rank {profile.rank.toLocaleString()}</p>
+                <Button className="w-full" onClick={() => navigate("/profile/edit")}>Chỉnh sửa hồ sơ</Button>
               </CardContent>
             </Card>
 
@@ -77,83 +119,90 @@ const Profile = () => {
 
             <Card>
               <CardContent className="p-6">
-                <h3 className="mb-4 font-semibold">Community Stats</h3>
+                <h3 className="mb-4 font-semibold">Thống kê cộng đồng</h3>
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Eye className="h-4 w-4 text-blue-500" />
-                      <span>Views</span>
+                      <span>Lượt xem</span>
                     </div>
                     <span className="font-semibold">0</span>
                   </div>
-                  <p className="text-xs text-muted-foreground">Last week 0</p>
+                  <p className="text-xs text-muted-foreground">Tuần trước 0</p>
                   
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Badge className="h-4 w-4 bg-green-500" />
-                      <span>Solution</span>
+                      <span>Giải pháp</span>
                     </div>
                     <span className="font-semibold">0</span>
                   </div>
-                  <p className="text-xs text-muted-foreground">Last week 0</p>
+                  <p className="text-xs text-muted-foreground">Tuần trước 0</p>
                   
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <MessageCircle className="h-4 w-4 text-purple-500" />
-                      <span>Discuss</span>
+                      <span>Thảo luận</span>
                     </div>
                     <span className="font-semibold">0</span>
                   </div>
-                  <p className="text-xs text-muted-foreground">Last week 0</p>
+                  <p className="text-xs text-muted-foreground">Tuần trước 0</p>
                   
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Star className="h-4 w-4 text-orange-500" />
-                      <span>Reputation</span>
+                      <span>Danh tiếng</span>
                     </div>
                     <span className="font-semibold">0</span>
                   </div>
-                  <p className="text-xs text-muted-foreground">Last week 0</p>
+                  <p className="text-xs text-muted-foreground">Tuần trước 0</p>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardContent className="p-6">
-                <h3 className="mb-4 font-semibold">Languages</h3>
+                <h3 className="mb-4 font-semibold">Ngôn ngữ</h3>
                 <div className="space-y-3">
-                  {languages.map((lang) => (
-                    <div key={lang.name} className="flex items-center justify-between text-sm">
-                      <span>{lang.name}</span>
-                      <Badge variant="secondary">{lang.solved} problems solved</Badge>
+                  {(showAllLanguages ? profile.languages : profile.languages.slice(0, 3)).map((lang) => (
+                    <div key={lang.language} className="flex items-center justify-between text-sm">
+                      <span className="capitalize">{lang.language}</span>
+                      <Badge variant="secondary">{lang.problems_solved} bài đã giải</Badge>
                     </div>
                   ))}
                 </div>
-                <Button variant="link" className="mt-4 p-0 text-sm text-primary">
-                  Show more
+                {profile.languages.length > 3 && (
+                  <Button 
+                    variant="link" 
+                    className="mt-4 p-0 text-sm text-primary"
+                    onClick={() => setShowAllLanguages(!showAllLanguages)}
+                  >
+                    {showAllLanguages ? 'Ẩn bớt' : 'Xem thêm'}
                 </Button>
+                )}
               </CardContent>
             </Card>
 
             <Card>
               <CardContent className="p-6">
-                <h3 className="mb-4 font-semibold">Skills</h3>
-                {skills.map((level) => (
-                  <div key={level.category} className="mb-4">
-                    <p className="mb-2 text-sm font-medium">• {level.category}</p>
-                    <div className="ml-4 space-y-2">
-                      {level.items.map((skill) => (
-                        <div key={skill.name} className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">{skill.name}</span>
-                          <Badge variant="outline" className="text-xs">x{skill.count}</Badge>
+                <h3 className="mb-4 font-semibold">Kỹ năng</h3>
+                <div className="space-y-2">
+                  {(showAllSkills ? profile.skills : profile.skills.slice(0, 5)).map((skill) => (
+                    <div key={skill.sub_topic_id} className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">{skill.sub_topic_name}</span>
+                      <Badge variant="outline" className="text-xs">x{skill.problems_solved}</Badge>
                         </div>
                       ))}
                     </div>
-                  </div>
-                ))}
-                <Button variant="link" className="mt-2 p-0 text-sm text-primary">
-                  Show more
+                {profile.skills.length > 5 && (
+                  <Button 
+                    variant="link" 
+                    className="mt-2 p-0 text-sm text-primary"
+                    onClick={() => setShowAllSkills(!showAllSkills)}
+                  >
+                    {showAllSkills ? 'Ẩn bớt' : 'Xem thêm'}
                 </Button>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -185,14 +234,14 @@ const Profile = () => {
                           stroke="currentColor"
                           strokeWidth="8"
                           fill="none"
-                          strokeDasharray={`${(0 / 100) * 440} 440`}
+                          strokeDasharray={`${(beatsPercentage / 100) * 440} 440`}
                           className="text-primary"
                         />
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <div className="text-sm text-muted-foreground">Beats</div>
-                        <div className="text-3xl font-bold">0<span className="text-lg">%</span></div>
-                        <div className="mt-2 text-xs text-muted-foreground">0 Attempting</div>
+                        <div className="text-sm text-muted-foreground">Tỷ lệ</div>
+                        <div className="text-3xl font-bold">{beatsPercentage}<span className="text-lg">%</span></div>
+                        <div className="mt-2 text-xs text-muted-foreground">{totalSolved} Đã giải</div>
                       </div>
                     </div>
 
@@ -200,15 +249,15 @@ const Profile = () => {
                     <div className="flex-1 space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-green-600">Easy</span>
-                        <span className="font-semibold">94/907</span>
+                        <span className="font-semibold">{profile.easy_ac.solved}/{profile.easy_ac.total}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-yellow-600">Med.</span>
-                        <span className="font-semibold">8/1933</span>
+                        <span className="font-semibold">{profile.medium_ac.solved}/{profile.medium_ac.total}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-red-600">Hard</span>
-                        <span className="font-semibold">0/876</span>
+                        <span className="font-semibold">{profile.hard_ac.solved}/{profile.hard_ac.total}</span>
                       </div>
                     </div>
                   </div>
@@ -219,12 +268,12 @@ const Profile = () => {
               <Card>
                 <CardContent className="p-6">
                   <div className="mb-6">
-                    <div className="mb-2 text-sm text-muted-foreground">Badges</div>
+                      <div className="mb-2 text-sm text-muted-foreground">Huy hiệu</div>
                     <div className="text-4xl font-bold">0</div>
                   </div>
                   <div className="rounded-lg border bg-muted/30 p-4 text-center">
-                    <div className="mb-1 text-xs text-muted-foreground">Locked Badge</div>
-                    <div className="font-semibold">Oct LeetCoding Challenge</div>
+                      <div className="mb-1 text-xs text-muted-foreground">Huy hiệu bị khóa</div>
+                      <div className="font-semibold">Thử thách LeetCode tháng 10</div>
                   </div>
                 </CardContent>
               </Card>
@@ -236,13 +285,13 @@ const Profile = () => {
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                   <h3 className="font-semibold">
                     <span className="text-2xl">31</span>{" "}
-                    <span className="text-muted-foreground">submissions in the past one year</span>
+                    <span className="text-muted-foreground">bài nộp trong một năm qua</span>
                   </h3>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span>Total active days: <strong className="text-foreground">10</strong></span>
-                    <span>Max streak: <strong className="text-foreground">3</strong></span>
+                    <span>Tổng số ngày hoạt động: <strong className="text-foreground">10</strong></span>
+                    <span>Chuỗi tối đa: <strong className="text-foreground">3</strong></span>
                     <select className="rounded border bg-background px-2 py-1 text-xs">
-                      <option>Current</option>
+                      <option>Hiện tại</option>
                     </select>
                   </div>
                 </div>
@@ -300,46 +349,47 @@ const Profile = () => {
             {/* Submissions Tabs */}
             <Tabs defaultValue="recent">
               <TabsList>
-                <TabsTrigger value="recent">📋 Recent AC</TabsTrigger>
-                <TabsTrigger value="list">📝 List</TabsTrigger>
-                <TabsTrigger value="solutions">✅ Solutions</TabsTrigger>
-                <TabsTrigger value="discuss">💬 Discuss</TabsTrigger>
+                <TabsTrigger value="recent">📋 AC gần đây</TabsTrigger>
+                <TabsTrigger value="list">📝 Danh sách</TabsTrigger>
+                <TabsTrigger value="solutions">✅ Giải pháp</TabsTrigger>
+                <TabsTrigger value="discuss">💬 Thảo luận</TabsTrigger>
               </TabsList>
 
               <TabsContent value="recent" className="mt-6">
-                <div className="flex justify-end mb-4">
-                  <Button variant="link" className="text-sm text-primary">
-                    View all submissions →
-                  </Button>
-                </div>
                 <div className="space-y-2">
-                  {submissions.map((submission, index) => (
+                  {profile.recent_ac.length === 0 ? (
+                    <Card className="p-8 text-center">
+                      <p className="text-muted-foreground">Chưa có bài nộp được chấp nhận gần đây.</p>
+                    </Card>
+                  ) : (
+                    profile.recent_ac.map((submission, index) => (
                     <div
                       key={index}
                       className="flex items-center justify-between rounded-lg border p-4 hover:bg-muted/50"
                     >
-                      <span className="font-medium">{submission.name}</span>
-                      <span className="text-sm text-muted-foreground">{submission.time}</span>
+                        <span className="font-medium">{submission.problem_name}</span>
+                        <span className="text-sm text-muted-foreground">{formatTimeAgo(submission.solved_at)}</span>
                     </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </TabsContent>
 
               <TabsContent value="list">
                 <Card className="p-8 text-center">
-                  <p className="text-muted-foreground">No lists created yet.</p>
+                  <p className="text-muted-foreground">Chưa có danh sách nào được tạo.</p>
                 </Card>
               </TabsContent>
 
               <TabsContent value="solutions">
                 <Card className="p-8 text-center">
-                  <p className="text-muted-foreground">No solutions shared yet.</p>
+                  <p className="text-muted-foreground">Chưa có giải pháp nào được chia sẻ.</p>
                 </Card>
               </TabsContent>
 
               <TabsContent value="discuss">
                 <Card className="p-8 text-center">
-                  <p className="text-muted-foreground">No discussions yet.</p>
+                  <p className="text-muted-foreground">Chưa có thảo luận nào.</p>
                 </Card>
               </TabsContent>
             </Tabs>
