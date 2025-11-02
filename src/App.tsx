@@ -16,6 +16,7 @@ const Problems = lazy(() => import("./pages/Problems"));
 const ProblemDetail = lazy(() => import("./pages/ProblemDetail"));
 const ProblemsBySubTopic = lazy(() => import("./pages/ProblemsBySubTopic"));
 const Contest = lazy(() => import("./pages/Contest"));
+const ContestDetail = lazy(() => import("./pages/ContestDetail"));
 const Discuss = lazy(() => import("./pages/Discuss"));
 const Profile = lazy(() => import("./pages/Profile"));
 const EditProfile = lazy(() => import("./pages/EditProfile"));
@@ -69,6 +70,7 @@ const App = () => (
                   <Route path="/problems/by-sub-topic/:subTopicId" element={<ProblemsBySubTopic />} />
                   <Route path="/problems/:id" element={<ProblemDetail />} />
                   <Route path="/contest" element={<Contest />} />
+                  <Route path="/contest/:id" element={<ContestDetail />} />
                   <Route path="/discuss" element={<Discuss />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/profile/edit" element={<EditProfile />} />

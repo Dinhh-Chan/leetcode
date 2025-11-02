@@ -1,6 +1,7 @@
 // Export all hooks
 export { useAuth } from './useAuth';
 export { useProblems } from './useProblems';
+export { useContests } from './useContests';
 export { 
   useLocalStorage, 
   useTheme, 

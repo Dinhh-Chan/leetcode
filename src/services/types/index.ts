@@ -2,3 +2,4 @@
 export * from './auth';
 export * from './problems';
 export * from './api';
+export * from './contests';

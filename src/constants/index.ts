@@ -40,6 +40,8 @@ export const API_ENDPOINTS = {
   // Contests
   contests: {
     list: '/contests',
+    ongoing: '/contests/ongoing/page',
+    myContest: '/contests/mycontest/page',
     detail: (id: string) => `/contests/${id}`,
     join: (id: string) => `/contests/${id}/join`,
     leaderboard: (id: string) => `/contests/${id}/leaderboard`,

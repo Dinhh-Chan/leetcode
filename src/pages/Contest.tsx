@@ -1,43 +1,25 @@
-import { Trophy, Clock, Calendar } from "lucide-react";
+import { Trophy, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import { useContests } from "@/hooks";
+import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 const Contest = () => {
-  const upcomingContests = [
-    {
-      id: 1,
-      title: "Weekly Contest 472",
-      time: "Sunday 9:30 AM GMT+7",
-      startsIn: "3d 23h 11m 22s",
-      gradient: "bg-gradient-blue",
-    },
-    {
-      id: 2,
-      title: "Biweekly Contest 168",
-      time: "Saturday 9:30 PM GMT+7",
-      startsIn: "10d 11h 11m 22s",
-      gradient: "bg-gradient-green",
-    },
-  ];
+  const navigate = useNavigate();
+  const {
+    contests: ongoingContests,
+    isLoadingContests,
+    contestsError,
+    myContests,
+    isLoadingMyContests,
+    myContestsError
+  } = useContests();
 
-  const pastContests = [
-    { id: 471, title: "Weekly Contest 471", date: "Oct 11, 2025 9:30 AM GMT+7" },
-    { id: 167, title: "Biweekly Contest 167", date: "Oct 11, 2025 3:30 PM GMT+7" },
-    { id: 470, title: "Weekly Contest 470", date: "Oct 5, 2025 9:30 AM GMT+7" },
-    { id: 469, title: "Weekly Contest 469", date: "Sep 28, 2025 9:30 AM GMT+7" },
-    { id: 166, title: "Biweekly Contest 166", date: "Sep 27, 2025 9:30 PM GMT+7" },
-  ];
-
-  const globalRanking = [
-    { rank: 1, name: "Minui", country: "🇰🇷", rating: 3703, attended: 26 },
-    { rank: 2, name: "Neal_Wu", country: "🇺🇸", rating: 3595, attended: 51 },
-    { rank: 3, name: "YawnSean", country: "🇨🇳", rating: 3545, attended: 84 },
-    { rank: 4, name: "小羊肖恩", country: "🇨🇳", rating: 3611, attended: 107 },
-    { rank: 5, name: "何昱", country: "🇨🇳", rating: 3599, attended: 146 },
-  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -47,112 +29,115 @@ const Contest = () => {
         {/* Hero Section */}
         <div className="mb-8 rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 p-12 text-center text-white">
           <Trophy className="mx-auto mb-4 h-20 w-20 text-yellow-400" />
-          <h1 className="mb-2 text-4xl font-bold">LeetCode Contest</h1>
-          <p className="text-lg text-slate-300">Contest every week. Compete and see your ranking!</p>
+          <h1 className="mb-2 text-4xl font-bold">Cuộc Thi Lập Trình</h1>
+          <p className="text-lg text-slate-300">Thử thách bản thân và nâng cao kỹ năng lập trình của bạn!</p>
         </div>
 
-        {/* Upcoming Contests */}
-        <div className="mb-8 grid gap-6 md:grid-cols-2">
-          {upcomingContests.map((contest) => (
-            <Card key={contest.id} className="overflow-hidden">
-              <div className={`${contest.gradient} relative h-48 p-6`}>
-                <div className="absolute right-4 top-4 rounded bg-white/20 p-2 backdrop-blur">
-                  <Calendar className="h-5 w-5 text-white" />
-                </div>
-                <div className="absolute bottom-4 left-4 flex items-center gap-2 text-white">
-                  <Clock className="h-4 w-4" />
-                  <span className="text-sm">Starts in {contest.startsIn}</span>
-                </div>
-              </div>
-              <CardContent className="p-6">
-                <h3 className="mb-2 text-xl font-bold">{contest.title}</h3>
-                <p className="mb-4 text-sm text-muted-foreground">{contest.time}</p>
-                <Button className="w-full">Register</Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <div className="mb-4 text-center">
-          <Button variant="link" className="text-primary">
-            🎖️ Sponsor a Contest
-          </Button>
-        </div>
 
         {/* Tabs Section */}
-        <Tabs defaultValue="past" className="mb-8">
+        <Tabs defaultValue="ongoing" className="mb-8">
           <div className="mb-6 flex items-center justify-between">
             <TabsList>
-              <TabsTrigger value="past">Past Contests</TabsTrigger>
-              <TabsTrigger value="my">My Contests</TabsTrigger>
+              <TabsTrigger value="ongoing">Đang diễn ra</TabsTrigger>
+              <TabsTrigger value="my">Cuộc thi của tôi</TabsTrigger>
             </TabsList>
-            <Button variant="link" className="text-sm text-muted-foreground">
-              ℹ️ What's a Virtual Contest?
-            </Button>
           </div>
 
-          <TabsContent value="past" className="space-y-4">
-            {pastContests.map((contest, index) => (
-              <Card key={contest.id} className="cursor-pointer transition-colors hover:bg-muted/50">
-                <CardContent className="flex items-center justify-between p-4">
-                  <div className="flex items-center gap-4">
-                    <div className={`${index % 2 === 0 ? 'bg-gradient-blue' : 'bg-gradient-green'} flex h-16 w-16 items-center justify-center rounded-lg`}>
-                      <Calendar className="h-8 w-8 text-white" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold">{contest.title}</h4>
-                      <p className="text-sm text-muted-foreground">{contest.date}</p>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm">Virtual</Button>
-                </CardContent>
+          <TabsContent value="ongoing" className="space-y-4">
+            <h3 className="mb-4 text-lg font-semibold">Các cuộc thi công khai đang diễn ra</h3>
+            {isLoadingContests ? (
+              <Card className="p-8 text-center">
+                <LoadingSpinner size="lg" className="mx-auto mb-4" />
+                <p className="text-muted-foreground">Đang tải cuộc thi...</p>
               </Card>
-            ))}
+            ) : contestsError ? (
+              <Card className="p-8 text-center">
+                <p className="text-destructive">Có lỗi xảy ra khi tải cuộc thi. Vui lòng thử lại sau.</p>
+              </Card>
+            ) : ongoingContests.length === 0 ? (
+              <Card className="p-8 text-center">
+                <p className="text-muted-foreground">Hiện chưa có cuộc thi nào đang diễn ra.</p>
+              </Card>
+            ) : (
+              ongoingContests.map((contest, index) => (
+                <Card key={contest._id} className="cursor-pointer transition-colors hover:bg-muted/50">
+                  <CardContent className="flex items-center justify-between p-4">
+                    <div className="flex items-center gap-4">
+                      <div className={`${index % 2 === 0 ? 'bg-gradient-blue' : 'bg-gradient-green'} flex h-16 w-16 items-center justify-center rounded-lg`}>
+                        <Calendar className="h-8 w-8 text-white" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold">{contest.contest_name}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {contest.description}
+                        </p>
+                        <div className="mt-1 flex gap-4 text-xs text-muted-foreground">
+                          <span>Bắt đầu: {format(new Date(contest.start_time), 'dd/MM/yyyy HH:mm')}</span>
+                          <span>Kết thúc: {format(new Date(contest.end_time), 'dd/MM/yyyy HH:mm')}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      {!contest.is_enrolled && (
+                        <Button size="sm">Đăng ký</Button>
+                      )}
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/contest/${contest._id}`)}>Xem chi tiết</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </TabsContent>
 
           <TabsContent value="my">
-            <Card className="p-8 text-center">
-              <p className="text-muted-foreground">You haven't participated in any contests yet.</p>
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        {/* Global Ranking */}
-        <div>
-          <div className="mb-4 flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-primary" />
-            <h2 className="text-2xl font-bold">Global Ranking</h2>
-          </div>
-          <Card>
-            <CardContent className="p-0">
-              {globalRanking.map((user) => (
-                <div
-                  key={user.rank}
-                  className="flex items-center justify-between border-b p-4 last:border-b-0 hover:bg-muted/50"
-                >
-                  <div className="flex items-center gap-4">
-                    <span className="w-8 text-center font-semibold text-muted-foreground">
-                      {user.rank}
-                    </span>
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`} />
-                      <AvatarFallback>{user.name[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold">{user.name}</span>
-                        <span>{user.country}</span>
+            <h3 className="mb-4 text-lg font-semibold">Cuộc thi của tôi</h3>
+            {isLoadingMyContests ? (
+              <Card className="p-8 text-center">
+                <LoadingSpinner size="lg" className="mx-auto mb-4" />
+                <p className="text-muted-foreground">Đang tải cuộc thi...</p>
+              </Card>
+            ) : myContestsError ? (
+              <Card className="p-8 text-center">
+                <p className="text-destructive">Có lỗi xảy ra khi tải cuộc thi. Vui lòng thử lại sau.</p>
+              </Card>
+            ) : myContests.length === 0 ? (
+              <Card className="p-8 text-center">
+                <p className="text-muted-foreground">Bạn chưa tham gia cuộc thi nào.</p>
+              </Card>
+            ) : (
+              myContests.map((item, index) => (
+                <Card key={item.contest._id} className="mb-4 cursor-pointer transition-colors hover:bg-muted/50">
+                  <CardContent className="flex items-center justify-between p-4">
+                    <div className="flex items-center gap-4">
+                      <div className={`${index % 2 === 0 ? 'bg-gradient-blue' : 'bg-gradient-green'} flex h-16 w-16 items-center justify-center rounded-lg`}>
+                        <Calendar className="h-8 w-8 text-white" />
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        Rating: {user.rating} · Attended: {user.attended}
+                      <div>
+                        <div className="mb-2 flex items-center gap-2">
+                          <h4 className="font-semibold">{item.contest.contest_name}</h4>
+                          <Badge variant={item.status === 'enrolled' ? 'default' : 'secondary'}>
+                            {item.status === 'enrolled' ? 'Đã tham gia' : 'Đang chờ duyệt'}
+                          </Badge>
+                          {item.is_manager && (
+                            <Badge variant="outline">Quản lý</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {item.contest.description}
+                        </p>
+                        <div className="mt-1 flex gap-4 text-xs text-muted-foreground">
+                          <span>Bắt đầu: {format(new Date(item.contest.start_time), 'dd/MM/yyyy HH:mm')}</span>
+                          <span>Kết thúc: {format(new Date(item.contest.end_time), 'dd/MM/yyyy HH:mm')}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/contest/${item.contest._id}`)}>Xem chi tiết</Button>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
