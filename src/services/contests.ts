@@ -52,12 +52,12 @@ class ContestsService {
     return response.data.data;
   }
 
-  // Join a contest
+  // Request join a contest (pending)
   async joinContest(id: string): Promise<void> {
     const token = this.getToken();
     await axios.post(
-      `${API_CONFIG.baseURL}${API_ENDPOINTS.contests.join(id)}`,
-      {},
+      `${API_CONFIG.baseURL}${API_ENDPOINTS.contestUsers.requestJoin}`,
+      { contest_id: id },
       {
         headers: {
           'Content-Type': 'application/json',

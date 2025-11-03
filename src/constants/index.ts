@@ -43,9 +43,11 @@ export const API_ENDPOINTS = {
     ongoing: '/contests/ongoing/page',
     myContest: '/contests/mycontest/page',
     detail: (id: string) => `/contests/${id}`,
-    join: (id: string) => `/contests/${id}/join`,
     ranking: (id: string) => `/contests/${id}/ranking`,
     start: (id: string) => `/contest-users/${id}/start`,
+  },
+  contestUsers: {
+    requestJoin: '/contest-users/request-join',
   },
   // Discussions
   discussions: {
