@@ -78,10 +78,30 @@ const Contest = () => {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      {!contest.is_enrolled && (
-                        <Button size="sm">Đăng ký</Button>
-                      )}
-                      <Button variant="outline" size="sm" onClick={() => navigate(`/contest/${contest._id}`)}>Xem chi tiết</Button>
+                      {(() => {
+                        const isEnded = new Date(contest.end_time).getTime() <= Date.now();
+                        if (isEnded) {
+                          return (
+                            <Button size="sm" variant="secondary" disabled>
+                              Đã kết thúc
+                            </Button>
+                          );
+                        }
+                        return (
+                          <>
+                            {!contest.is_enrolled && (
+                              <Button size="sm">Đăng ký</Button>
+                            )}
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => navigate(`/contest/${contest._id}`)}
+                            >
+                              Xem chi tiết
+                            </Button>
+                          </>
+                        );
+                      })()}
                     </div>
                   </CardContent>
                 </Card>
@@ -131,7 +151,25 @@ const Contest = () => {
                         </div>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/contest/${item.contest._id}`)}>Xem chi tiết</Button>
+                    {(() => {
+                      const isEnded = new Date(item.contest.end_time).getTime() <= Date.now();
+                      if (isEnded) {
+                        return (
+                          <Button size="sm" variant="secondary" disabled>
+                            Đã kết thúc
+                          </Button>
+                        );
+                      }
+                      return (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => navigate(`/contest/${item.contest._id}`)}
+                        >
+                          Xem chi tiết
+                        </Button>
+                      );
+                    })()}
                   </CardContent>
                 </Card>
               ))
