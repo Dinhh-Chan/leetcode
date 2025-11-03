@@ -14,14 +14,16 @@ export const useAuth = () => {
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Get current user query
+  const isAuth = authService.isAuthenticated();
   const {
     data: user,
     isLoading: isLoadingUser,
     error: userError,
+    refetch: refetchUser,
   } = useQuery({
     queryKey: ['auth', 'user'],
     queryFn: authService.getProfile,
-    enabled: authService.isAuthenticated(),
+    enabled: isAuth,
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -29,8 +31,16 @@ export const useAuth = () => {
   // Login mutation
   const loginMutation = useMutation({
     mutationFn: (credentials: LoginCredentials) => authService.login(credentials),
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      // Set user data in cache immediately
       queryClient.setQueryData(['auth', 'user'], data.user);
+      // Refetch to ensure query is enabled and state is updated
+      try {
+        await refetchUser();
+      } catch (error) {
+        // If refetch fails, the cached data should still work
+        console.log('Refetch after login:', error);
+      }
       toast.success('Đăng nhập thành công!');
     },
     onError: (error: any) => {

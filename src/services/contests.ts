@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { API_CONFIG, API_ENDPOINTS } from '@/constants';
-import { OngoingContestsResponse, Contest, MyContestsResponse } from './types/contests';
+import { OngoingContestsResponse, Contest, MyContestsResponse, ContestRankingResponse } from './types/contests';
 
 class ContestsService {
   // Get auth token
@@ -96,6 +96,21 @@ class ContestsService {
       }
     );
 
+    return response.data;
+  }
+
+  // Get contest ranking
+  async getContestRanking(contestId: string): Promise<ContestRankingResponse> {
+    const token = this.getToken();
+    const response = await axios.get<ContestRankingResponse>(
+      `${API_CONFIG.baseURL}${API_ENDPOINTS.contests.ranking(contestId)}`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      }
+    );
     return response.data;
   }
 }

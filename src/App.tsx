@@ -17,7 +17,8 @@ const ProblemDetail = lazy(() => import("./pages/ProblemDetail"));
 const ProblemsBySubTopic = lazy(() => import("./pages/ProblemsBySubTopic"));
 const Contest = lazy(() => import("./pages/Contest"));
 const ContestDetail = lazy(() => import("./pages/ContestDetail"));
-const Discuss = lazy(() => import("./pages/Discuss"));
+const ContestProblemDetail = lazy(() => import("./pages/ContestProblemDetail"));
+const ContestSubmissionDetail = lazy(() => import("./pages/ContestSubmissionDetail"));
 const Profile = lazy(() => import("./pages/Profile"));
 const EditProfile = lazy(() => import("./pages/EditProfile"));
 const Login = lazy(() => import("./pages/Login"));
@@ -60,24 +61,25 @@ const App = () => (
               <SkipToContent />
               <Suspense fallback={<PageLoading />}>
                 <Routes>
-                  {/* Public routes */}
-                  <Route path="/" element={<Index />} />
+                  {/* Public routes - only login and register */}
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   
-                  {/* Routes without authentication */}
-                  <Route path="/problems" element={<Problems />} />
-                  <Route path="/problems/by-sub-topic/:subTopicId" element={<ProblemsBySubTopic />} />
-                  <Route path="/problems/:id" element={<ProblemDetail />} />
-                  <Route path="/contest" element={<Contest />} />
-                  <Route path="/contest/:id" element={<ContestDetail />} />
-                  <Route path="/discuss" element={<Discuss />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/profile/edit" element={<EditProfile />} />
-                  <Route path="/submissions/:id" element={<SubmissionDetail />} />
+                  {/* Protected routes - require authentication */}
+                  <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                  <Route path="/problems" element={<ProtectedRoute><Problems /></ProtectedRoute>} />
+                  <Route path="/problems/by-sub-topic/:subTopicId" element={<ProtectedRoute><ProblemsBySubTopic /></ProtectedRoute>} />
+                  <Route path="/problems/:id" element={<ProtectedRoute><ProblemDetail /></ProtectedRoute>} />
+                  <Route path="/contest" element={<ProtectedRoute><Contest /></ProtectedRoute>} />
+                  <Route path="/contest/:contestId" element={<ProtectedRoute><ContestDetail /></ProtectedRoute>} />
+                  <Route path="/contest/:contestId/problems/:problemId" element={<ProtectedRoute><ContestProblemDetail /></ProtectedRoute>} />
+                  <Route path="/contest/:contestId/submissions/:id" element={<ProtectedRoute><ContestSubmissionDetail /></ProtectedRoute>} />
+                  <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                  <Route path="/profile/edit" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
+                  <Route path="/submissions/:id" element={<ProtectedRoute><SubmissionDetail /></ProtectedRoute>} />
                   
                   {/* Catch-all route */}
-                  <Route path="*" element={<NotFound />} />
+                  <Route path="*" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
                 </Routes>
               </Suspense>
             </BrowserRouter>

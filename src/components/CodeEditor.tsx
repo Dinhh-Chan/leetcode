@@ -13,6 +13,7 @@ import { getCppSuggestions } from "./CodeEditor/cppSuggestions";
 import { getCSharpSuggestions } from "./CodeEditor/csSuggestions";
 import { judge0Service, BatchSubmissionResponse } from "@/services/judge0";
 import { submissionsService } from "@/services/submissions";
+import { contestSubmissionsService } from "@/services/contestSubmissions";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 
@@ -22,9 +23,11 @@ interface CodeEditorProps {
   testCases?: { input: string; output: string }[];
   problemId?: string;
   studentId?: string;
+  contestId?: string;
+  isContestSubmission?: boolean;
 }
 
-const CodeEditor = ({ initialCode = "", language = "python", testCases = [], problemId, studentId }: CodeEditorProps) => {
+const CodeEditor = ({ initialCode = "", language = "python", testCases = [], problemId, studentId, contestId, isContestSubmission = false }: CodeEditorProps) => {
   const [code, setCode] = useState(initialCode);
   const navigate = useNavigate();
   
@@ -195,29 +198,61 @@ const CodeEditor = ({ initialCode = "", language = "python", testCases = [], pro
   }).length || 0;
 
   const handleSubmit = async () => {
-    if (!selectedLangId || !code.trim() || !problemId || !studentId) {
+    if (!selectedLangId || !code.trim() || !problemId) {
       alert("Vui lòng đảm bảo đã chọn ngôn ngữ và điền code.");
       return;
     }
-    
-    setIsSubmitting(true);
-    try {
-      const response = await submissionsService.submit({
-        student_id: studentId,
-        problem_id: problemId,
-        language_id: selectedLangId,
-        code: code.trim(),
-      });
-      
-      // Navigate to submission detail page
-      if (response.data._id) {
-        navigate(`/submissions/${response.data._id}`);
+
+    if (isContestSubmission) {
+      if (!contestId) {
+        alert("Thiếu thông tin cuộc thi.");
+        return;
       }
-    } catch (error: any) {
-      console.error("Error submitting code:", error);
-      alert(error?.message || "Failed to submit code. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+      
+      setIsSubmitting(true);
+      try {
+        const response = await contestSubmissionsService.submit({
+          contest_id: contestId,
+          problem_id: problemId,
+          language_id: selectedLangId,
+          code: code.trim(),
+        });
+        
+        // Navigate to contest submission detail page
+        if (response.data._id) {
+          navigate(`/contest/${contestId}/submissions/${response.data._id}`);
+        }
+      } catch (error: any) {
+        console.error("Error submitting contest code:", error);
+        alert(error?.message || "Không thể nộp bài. Vui lòng thử lại.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      if (!studentId) {
+        alert("Thiếu thông tin người dùng.");
+        return;
+      }
+      
+      setIsSubmitting(true);
+      try {
+        const response = await submissionsService.submit({
+          student_id: studentId,
+          problem_id: problemId,
+          language_id: selectedLangId,
+          code: code.trim(),
+        });
+        
+        // Navigate to submission detail page
+        if (response.data._id) {
+          navigate(`/submissions/${response.data._id}`);
+        }
+      } catch (error: any) {
+        console.error("Error submitting code:", error);
+        alert(error?.message || "Không thể nộp bài. Vui lòng thử lại.");
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 

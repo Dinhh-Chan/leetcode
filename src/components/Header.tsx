@@ -1,5 +1,5 @@
 import React, { memo } from "react";
-import { ChevronLeft, Bell, Award, Sun, Moon, Monitor, User, LogOut, Settings } from "lucide-react";
+import { ChevronLeft, Award, Sun, Moon, Monitor, User, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -12,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Header = memo(() => {
@@ -68,11 +67,6 @@ const Header = memo(() => {
         <div className="flex items-center space-x-2">
           <Button variant="ghost" size="icon" onClick={toggleTheme}>
             {getThemeIcon()}
-          </Button>
-          
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs">3</Badge>
           </Button>
           
           {isAuthenticated ? (
@@ -140,10 +134,6 @@ const Header = memo(() => {
               </Link>
             </>
           )}
-          
-          <Button variant="ghost" className="text-primary hover:text-primary">
-            Nâng cấp
-          </Button>
         </div>
       </div>
     </header>

@@ -103,7 +103,7 @@ const BannerCards = () => {
                   <Button
                     size="sm"
                     variant="secondary"
-                    className="bg-white text-foreground hover:bg-white/90 w-full"
+                    className="bg-white text-gray-900 hover:bg-white/90 dark:bg-white dark:text-gray-900 dark:hover:bg-white/90 w-full font-semibold"
                   >
                     Bắt đầu học
                   </Button>
@@ -120,7 +120,7 @@ const BannerCards = () => {
             <Button
               variant="outline"
               size="icon"
-              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 h-10 w-10 rounded-full bg-white shadow-lg z-10"
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 h-10 w-10 rounded-full bg-white text-gray-900 hover:bg-white/90 dark:bg-white dark:text-gray-900 dark:hover:bg-white/90 shadow-lg z-10 border-gray-200 dark:border-gray-300"
               onClick={handlePrev}
             >
               <ChevronLeft className="h-5 w-5" />
@@ -130,7 +130,7 @@ const BannerCards = () => {
             <Button
               variant="outline"
               size="icon"
-              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 h-10 w-10 rounded-full bg-white shadow-lg z-10"
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 h-10 w-10 rounded-full bg-white text-gray-900 hover:bg-white/90 dark:bg-white dark:text-gray-900 dark:hover:bg-white/90 shadow-lg z-10 border-gray-200 dark:border-gray-300"
               onClick={handleNext}
             >
               <ChevronRight className="h-5 w-5" />

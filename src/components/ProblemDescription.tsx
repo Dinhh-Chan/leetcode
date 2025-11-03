@@ -8,7 +8,7 @@ interface ProblemDescriptionProps {
   problemData: {
     id: number;
     title: string;
-    difficulty: "Easy" | "Med" | "Hard";
+    difficulty: "Easy" | "Med" | "Hard" | "Dễ" | "Trung bình" | "Khó";
     description: string;
     guidelines?: string;
     solution?: string;
@@ -28,10 +28,13 @@ const ProblemDescription = ({ problemData }: ProblemDescriptionProps) => {
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "Easy":
+      case "Dễ":
         return "text-success bg-success/10 border-success/20";
       case "Med":
+      case "Trung bình":
         return "text-warning bg-warning/10 border-warning/20";
       case "Hard":
+      case "Khó":
         return "text-destructive bg-destructive/10 border-destructive/20";
       default:
         return "";

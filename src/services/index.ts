@@ -4,6 +4,7 @@ export { authService } from './auth';
 export { problemsService } from './problems';
 export { subTopicsService } from './subTopics';
 export { contestsService } from './contests';
+export { contestSubmissionsService } from './contestSubmissions';
 
 // Export service types
 export type { AxiosRequestConfig, AxiosResponse, AxiosError } from './api';

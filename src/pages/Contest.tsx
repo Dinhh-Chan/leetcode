@@ -38,7 +38,7 @@ const Contest = () => {
         <Tabs defaultValue="ongoing" className="mb-8">
           <div className="mb-6 flex items-center justify-between">
             <TabsList>
-              <TabsTrigger value="ongoing">Đang diễn ra</TabsTrigger>
+              <TabsTrigger value="ongoing"> Các cuộc thi công khai đang diễn ra</TabsTrigger>
               <TabsTrigger value="my">Cuộc thi của tôi</TabsTrigger>
             </TabsList>
           </div>

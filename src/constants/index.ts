@@ -44,7 +44,7 @@ export const API_ENDPOINTS = {
     myContest: '/contests/mycontest/page',
     detail: (id: string) => `/contests/${id}`,
     join: (id: string) => `/contests/${id}/join`,
-    leaderboard: (id: string) => `/contests/${id}/leaderboard`,
+    ranking: (id: string) => `/contests/${id}/ranking`,
     start: (id: string) => `/contest-users/${id}/start`,
   },
   // Discussions
@@ -207,7 +207,4 @@ export const NAV_ITEMS = [
   { label: 'Khám phá', path: '/', exact: true },
   { label: 'Bài tập', path: '/problems' },
   { label: 'Cuộc thi', path: '/contest' },
-  { label: 'Thảo luận', path: '/discuss' },
-  { label: 'Phỏng vấn', path: '/interview', hasDropdown: true },
-  { label: 'Cửa hàng', path: '/store', hasDropdown: true },
 ] as const;

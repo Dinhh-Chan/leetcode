@@ -4,46 +4,75 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, Trophy, Users, FileCode, Award } from "lucide-react";
+import { ChevronLeft, Trophy, Users, FileCode, Award, CheckCircle2 } from "lucide-react";
 import Header from "@/components/Header";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { contestsService } from "@/services";
-import { Contest } from "@/services/types/contests";
+import { Contest, ContestRankingItem } from "@/services/types/contests";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
 const ContestDetail = () => {
-  const { id } = useParams();
+  const { id, contestId } = useParams();
+  const contestIdParam = contestId || id; // Support both :id and :contestId for backward compatibility
   const navigate = useNavigate();
   const [contest, setContest] = useState<Contest | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
+  const [ranking, setRanking] = useState<any[]>([]);
+  const [isLoadingRanking, setIsLoadingRanking] = useState(false);
 
   const loadContest = useCallback(async () => {
-    if (!id) return;
+    if (!contestIdParam) return;
     try {
       setIsLoading(true);
-      const data = await contestsService.getContest(id);
+      const data = await contestsService.getContest(contestIdParam);
       setContest(data);
     } catch (e: any) {
       setError(e?.message || "Không thể tải thông tin cuộc thi");
     } finally {
       setIsLoading(false);
     }
-  }, [id]);
+  }, [contestIdParam]);
 
   useEffect(() => {
     loadContest();
   }, [loadContest]);
 
+  const loadRanking = useCallback(async () => {
+    if (!contestIdParam) return;
+    try {
+      setIsLoadingRanking(true);
+      const response = await contestsService.getContestRanking(contestIdParam);
+      const rankingData = response.data?.ranking || [];
+      setRanking(rankingData);
+      // Debug: log first ranking item to check score
+      if (rankingData.length > 0) {
+        console.log("First ranking item:", rankingData[0]);
+      }
+    } catch (e: any) {
+      console.error("Error loading ranking:", e);
+      setRanking([]);
+    } finally {
+      setIsLoadingRanking(false);
+    }
+  }, [contestIdParam]);
+
+  useEffect(() => {
+    // Only load ranking if contest has started
+    if (contest && contest.is_start) {
+      loadRanking();
+    }
+  }, [contest, loadRanking]);
+
   const handleJoinContest = async () => {
-    if (!id) return;
+    if (!contestIdParam) return;
     
     try {
       setIsJoining(true);
-      await contestsService.joinContest(id);
+      await contestsService.joinContest(contestIdParam);
       toast.success("Đăng ký thành công! Trạng thái: Đang chờ");
       // Reload contest data to get updated status
       await loadContest();
@@ -55,11 +84,11 @@ const ContestDetail = () => {
   };
 
   const handleStartContest = async () => {
-    if (!id || !contest) return;
+    if (!contestIdParam || !contest) return;
     
     try {
       setIsStarting(true);
-      await contestsService.startContest(id, true);
+      await contestsService.startContest(contestIdParam, true);
       toast.success("Bắt đầu cuộc thi thành công!");
       // Reload contest data to get updated is_start status
       await loadContest();
@@ -102,8 +131,6 @@ const ContestDetail = () => {
 
   const contestUsers = contest.contest_users || [];
   const contestProblems = contest.contest_problems || [];
-  // Assuming ranking is passed in contest object or needs to be fetched separately
-  const ranking = (contest as any).ranking || [];
   
   const status = contest.status || 'not-participant';
   const isStart = contest.is_start || false;
@@ -212,7 +239,7 @@ const ContestDetail = () => {
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-4">
                           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-lg font-bold">
-                            {index + 1}
+                            {String.fromCharCode(65 + index)}
                           </div>
                           <div>
                             <h4 className="mb-1 font-semibold">
@@ -224,16 +251,29 @@ const ContestDetail = () => {
                               </p>
                             )}
                             {item.problem && (
-                              <div className="mt-2 flex gap-2">
+                              <div className="mt-2 flex flex-wrap items-center gap-2">
                                 <Badge variant={item.problem.difficulty === 1 ? 'default' : item.problem.difficulty === 2 ? 'secondary' : 'destructive'}>
                                   {item.problem.difficulty === 1 ? 'Dễ' : item.problem.difficulty === 2 ? 'Trung bình' : 'Khó'}
                                 </Badge>
                                 <Badge variant="outline">Điểm: {item.score}</Badge>
+                                {item.problem.is_done !== undefined && (
+                                  <Badge 
+                                    variant={item.problem.is_done ? 'default' : 'outline'} 
+                                    className={item.problem.is_done ? 'bg-green-500 hover:bg-green-500/90' : ''}
+                                  >
+                                    <CheckCircle2 className="mr-1 h-3 w-3" />
+                                    {item.problem.is_done ? 'Đã giải' : 'Chưa giải'}
+                                  </Badge>
+                                )}
                               </div>
                             )}
                           </div>
                         </div>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => navigate(`/contest/${contest._id}/problems/${item.problem?._id}`)}
+                        >
                           Giải bài
                         </Button>
                       </div>
@@ -289,7 +329,13 @@ const ContestDetail = () => {
           {/* Ranking Tab */}
           {shouldShowProblemsAndRanking && (
             <TabsContent value="ranking" className="mt-6">
-            {ranking.length === 0 ? (
+            {isLoadingRanking ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <LoadingSpinner />
+                </CardContent>
+              </Card>
+            ) : ranking.length === 0 ? (
               <Card>
                 <CardContent className="p-8 text-center">
                   <p className="text-muted-foreground">Chưa có bảng xếp hạng.</p>
@@ -298,40 +344,135 @@ const ContestDetail = () => {
             ) : (
               <Card>
                 <CardContent className="p-0">
-                  {ranking.map((item: any, index: number) => (
-                    <div
-                      key={item._id}
-                      className="flex items-center justify-between border-b p-4 last:border-b-0 hover:bg-muted/50"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="flex w-12 items-center justify-center">
-                          <Badge variant={index === 0 ? 'default' : 'outline'}>
-                            {item.rank || index + 1}
-                          </Badge>
-                        </div>
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold">
-                          {(item.user?.username || 'U').charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold">{item.user?.fullname || item.user?.username || 'Người dùng'}</span>
-                            {item.is_manager && (
-                              <Badge variant="outline">Quản lý</Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            Username: {item.user?.username}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-6">
-                        <div className="text-center">
-                          <p className="text-2xl font-bold text-primary">{item.accepted_count}</p>
-                          <p className="text-xs text-muted-foreground">Bài đã giải</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead className="bg-muted/50 sticky top-0">
+                        <tr>
+                          <th className="px-3 py-3 text-center text-xs font-semibold border-b min-w-[60px]">Rank</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold border-b min-w-[200px]">Team/User</th>
+                          {contestProblems.map((contestProblem: any, idx: number) => {
+                            const problemId = contestProblem.problem?._id || contestProblem.problem_id;
+                            return (
+                              <th 
+                                key={problemId || idx}
+                                className="px-3 py-3 text-center text-xs font-semibold border-b min-w-[80px] cursor-pointer hover:bg-muted/70"
+                                onClick={() => problemId && navigate(`/contest/${contestIdParam}/problems/${problemId}`)}
+                              >
+                                <div className="font-bold">{String.fromCharCode(65 + idx)}</div>
+                                <div className="text-[10px] text-muted-foreground mt-1 truncate max-w-[80px]">{contestProblem.problem?.name?.slice(0, 12) || `Bài ${idx + 1}`}</div>
+                              </th>
+                            );
+                          })}
+                          <th className="px-4 py-3 text-center text-xs font-semibold border-b min-w-[80px] bg-primary/10">
+                            <div className="font-bold">Score</div>
+                            <div className="text-[10px] text-muted-foreground mt-1">Total</div>
+                          </th>
+                          <th className="px-4 py-3 text-center text-xs font-semibold border-b min-w-[60px] bg-primary/10">
+                            <div className="font-bold">AC</div>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {ranking.map((item: ContestRankingItem) => {
+                          // Create a map of problem_id to problem data for quick lookup
+                          const problemMap = new Map(item.problems.map(p => [p.problem_id, p]));
+
+                          // Calculate total score
+                          const totalScore = contestProblems.reduce((sum, contestProblem: any) => {
+                            const problemId = contestProblem.problem?._id || contestProblem.problem_id;
+                            const problemData = problemId ? problemMap.get(problemId) : null;
+                            
+                            if (problemData?.is_solved) {
+                              // Priority: problemData.score > contestProblem.score
+                              let scoreToAdd = null;
+                              
+                              if (problemData.score !== undefined && problemData.score !== null && problemData.score !== '') {
+                                scoreToAdd = typeof problemData.score === 'string' ? parseFloat(problemData.score) : problemData.score;
+                              } else if (contestProblem.score !== undefined && contestProblem.score !== null && contestProblem.score !== '') {
+                                scoreToAdd = typeof contestProblem.score === 'string' ? parseFloat(contestProblem.score) : contestProblem.score;
+                              }
+                              
+                              if (scoreToAdd !== null && !isNaN(scoreToAdd)) {
+                                return sum + scoreToAdd;
+                              }
+                            }
+                            return sum;
+                          }, 0);
+
+                          return (
+                            <tr
+                              key={item.user._id}
+                              className={`border-b hover:bg-muted/30 transition-colors ${item.rank <= 3 ? 'bg-primary/5' : ''}`}
+                            >
+                              <td className="px-3 py-3 text-center border-r">
+                                <Badge variant={item.rank === 1 ? 'default' : item.rank === 2 ? 'secondary' : item.rank === 3 ? 'outline' : 'outline'}>
+                                  {item.rank}
+                                </Badge>
+                              </td>
+                              <td className="px-4 py-3 border-r">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold flex-shrink-0">
+                                    {(item.user.username || 'U').charAt(0).toUpperCase()}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="font-semibold text-sm truncate">{item.user.fullname || item.user.username}</div>
+                                    <div className="text-xs text-muted-foreground truncate">@{item.user.username}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              {contestProblems.map((contestProblem: any, idx: number) => {
+                                const problemId = contestProblem.problem?._id || contestProblem.problem_id;
+                                const problemData = problemId ? problemMap.get(problemId) : null;
+                                
+                                return (
+                                  <td 
+                                    key={problemId || idx}
+                                    className={`px-3 py-3 text-center border-r ${
+                                      problemData?.is_solved 
+                                        ? 'bg-green-50 dark:bg-green-950/20' 
+                                        : 'bg-muted/20'
+                                    }`}
+                                  >
+                                    {problemData ? (
+                                      problemData.is_solved ? (
+                                        <div className="flex flex-col items-center">
+                                          <span className="text-green-600 dark:text-green-400 font-bold text-sm">✓</span>
+                                          {(problemData.score !== undefined && problemData.score !== null && problemData.score !== '') || 
+                                           (contestProblem.score !== undefined && contestProblem.score !== null && contestProblem.score !== '') ? (
+                                            <span className="text-xs text-muted-foreground mt-0.5">
+                                              {(() => {
+                                                let scoreValue = null;
+                                                if (problemData.score !== undefined && problemData.score !== null && problemData.score !== '') {
+                                                  scoreValue = typeof problemData.score === 'string' ? parseFloat(problemData.score) : problemData.score;
+                                                } else if (contestProblem.score !== undefined && contestProblem.score !== null && contestProblem.score !== '') {
+                                                  scoreValue = typeof contestProblem.score === 'string' ? parseFloat(contestProblem.score) : contestProblem.score;
+                                                }
+                                                return scoreValue !== null && !isNaN(scoreValue) ? scoreValue.toFixed(1) : '-';
+                                              })()}
+                                            </span>
+                                          ) : null}
+                                        </div>
+                                      ) : (
+                                        <span className="text-muted-foreground">-</span>
+                                      )
+                                    ) : (
+                                      <span className="text-muted-foreground">-</span>
+                                    )}
+                                  </td>
+                                );
+                              })}
+                              <td className="px-4 py-3 text-center border-r bg-primary/10 font-bold">
+                                {totalScore.toFixed(1)}
+                              </td>
+                              <td className="px-4 py-3 text-center bg-primary/10 font-bold text-primary">
+                                {item.accepted_count}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </CardContent>
               </Card>
             )}

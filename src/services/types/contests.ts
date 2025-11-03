@@ -59,3 +59,29 @@ export interface MyContestsResponse {
   success: boolean;
 }
 
+export interface ContestRankingProblem {
+  problem_id: string;
+  problem_name: string;
+  is_solved: boolean;
+  solved_at: string | null;
+  score?: string | number;
+}
+
+export interface ContestRankingItem {
+  rank: number;
+  user: {
+    _id: string;
+    username: string;
+    fullname: string;
+  };
+  accepted_count: number;
+  problems: ContestRankingProblem[];
+}
+
+export interface ContestRankingResponse {
+  success: boolean;
+  data: {
+    ranking: ContestRankingItem[];
+  };
+}
+

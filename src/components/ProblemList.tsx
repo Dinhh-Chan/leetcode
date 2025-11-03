@@ -16,15 +16,16 @@ const ProblemList = memo(() => {
   const [sortBy, setSortBy] = useState<'title' | 'difficulty' | 'acceptance'>('title');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
-  const getDifficultyLabel = (difficulty: number): 'Easy' | 'Medium' | 'Hard' => {
-    if (difficulty === 1) return 'Easy';
-    if (difficulty === 2) return 'Medium';
-    return 'Hard';
+  const getDifficultyLabel = (difficulty: number): 'Dễ' | 'Trung bình' | 'Khó' => {
+    if (difficulty === 1) return 'Dễ';
+    if (difficulty === 2) return 'Trung bình';
+    return 'Khó';
   };
 
   const getDifficultyColor = (difficulty: number) => {
-    const label = getDifficultyLabel(difficulty);
-    return DIFFICULTY_COLORS[label] || "text-muted-foreground";
+    if (difficulty === 1) return DIFFICULTY_COLORS.Easy || "text-green-600";
+    if (difficulty === 2) return DIFFICULTY_COLORS.Medium || "text-yellow-600";
+    return DIFFICULTY_COLORS.Hard || "text-red-600";
   };
 
   const getStatusIcon = (status: string | null | undefined) => {
@@ -41,7 +42,7 @@ const ProblemList = memo(() => {
   type DisplayProblem = Problem & {
     id: number;
     title: string;
-    difficultyLabel: 'Easy' | 'Medium' | 'Hard';
+    difficultyLabel: 'Dễ' | 'Trung bình' | 'Khó';
     tags: string[];
     status?: string | null;
   };
@@ -102,7 +103,7 @@ const ProblemList = memo(() => {
             onClick={() => handleSort('title')}
             className={cn(sortBy === 'title' && 'bg-muted')}
           >
-            Tiêu đề {sortBy === 'title' && (sortOrder === 'asc' ? '↑' : '↓')}
+            {/* Tiêu đề {sortBy === 'title' && (sortOrder === 'asc' ? '↑' : '↓')} */}
           </Button>
           <Button
             variant="ghost"
@@ -110,7 +111,7 @@ const ProblemList = memo(() => {
             onClick={() => handleSort('acceptance')}
             className={cn(sortBy === 'acceptance' && 'bg-muted')}
           >
-            Tỷ lệ đúng {sortBy === 'acceptance' && (sortOrder === 'asc' ? '↑' : '↓')}
+            {/* Tỷ lệ đúng {sortBy === 'acceptance' && (sortOrder === 'asc' ? '↑' : '↓')} */}
           </Button>
           <Button
             variant="ghost"
@@ -118,7 +119,7 @@ const ProblemList = memo(() => {
             onClick={() => handleSort('difficulty')}
             className={cn(sortBy === 'difficulty' && 'bg-muted')}
           >
-            Độ khó {sortBy === 'difficulty' && (sortOrder === 'asc' ? '↑' : '↓')}
+            {/* Độ khó {sortBy === 'difficulty' && (sortOrder === 'asc' ? '↑' : '↓')} */}
           </Button>
         </div>
       </div>

@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { MapPin, Link as LinkIcon, Eye, MessageCircle, Star, Loader2 } from "lucide-react";
+import { MapPin, Link as LinkIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import Header from "@/components/Header";
 import { profileService } from "@/services/profile";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -43,6 +44,11 @@ const Profile = () => {
   const totalSolved = (profile?.easy_ac?.solved || 0) + (profile?.medium_ac?.solved || 0) + (profile?.hard_ac?.solved || 0);
   const totalProblems = (profile?.easy_ac?.total || 0) + (profile?.medium_ac?.total || 0) + (profile?.hard_ac?.total || 0);
   const beatsPercentage = totalSolved > 0 ? Math.round((totalSolved / totalProblems) * 100) : 0;
+  
+  // Calculate individual percentages
+  const easyPercentage = profile?.easy_ac?.total > 0 ? Math.round((profile.easy_ac.solved / profile.easy_ac.total) * 100) : 0;
+  const mediumPercentage = profile?.medium_ac?.total > 0 ? Math.round((profile.medium_ac.solved / profile.medium_ac.total) * 100) : 0;
+  const hardPercentage = profile?.hard_ac?.total > 0 ? Math.round((profile.hard_ac.solved / profile.hard_ac.total) * 100) : 0;
   
   // Get avatar initials
   const getInitials = (name?: string) => {
@@ -104,61 +110,7 @@ const Profile = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardContent className="space-y-3 p-6 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <MapPin className="h-4 w-4" />
-                  <span>Vietnam</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <LinkIcon className="h-4 w-4" />
-                  <span>Dinh-Chan</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="mb-4 font-semibold">Thống kê cộng đồng</h3>
-                <div className="space-y-3 text-sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Eye className="h-4 w-4 text-blue-500" />
-                      <span>Lượt xem</span>
-                    </div>
-                    <span className="font-semibold">0</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Tuần trước 0</p>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Badge className="h-4 w-4 bg-green-500" />
-                      <span>Giải pháp</span>
-                    </div>
-                    <span className="font-semibold">0</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Tuần trước 0</p>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <MessageCircle className="h-4 w-4 text-purple-500" />
-                      <span>Thảo luận</span>
-                    </div>
-                    <span className="font-semibold">0</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Tuần trước 0</p>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Star className="h-4 w-4 text-orange-500" />
-                      <span>Danh tiếng</span>
-                    </div>
-                    <span className="font-semibold">0</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Tuần trước 0</p>
-                </div>
-              </CardContent>
-            </Card>
+      
 
             <Card>
               <CardContent className="p-6">
@@ -209,75 +161,70 @@ const Profile = () => {
 
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">
-            {/* Stats Cards - New Layout */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {/* Problem Solved Card */}
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-6">
-                    {/* Circular Progress */}
-                    <div className="relative">
-                      <svg className="h-40 w-40 -rotate-90">
-                        <circle
-                          cx="80"
-                          cy="80"
-                          r="70"
-                          stroke="currentColor"
-                          strokeWidth="8"
-                          fill="none"
-                          className="text-muted"
-                        />
-                        <circle
-                          cx="80"
-                          cy="80"
-                          r="70"
-                          stroke="currentColor"
-                          strokeWidth="8"
-                          fill="none"
-                          strokeDasharray={`${(beatsPercentage / 100) * 440} 440`}
-                          className="text-primary"
-                        />
-                      </svg>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <div className="text-sm text-muted-foreground">Tỷ lệ</div>
-                        <div className="text-3xl font-bold">{beatsPercentage}<span className="text-lg">%</span></div>
-                        <div className="mt-2 text-xs text-muted-foreground">{totalSolved} Đã giải</div>
+            {/* Problem Solved Card - Full Width */}
+            <Card>
+              <CardContent className="p-6">
+                {/* Total Progress */}
+                <div className="mb-6">
+                  <div className="mb-2 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold">Tổng số bài đã giải</h3>
+                      <p className="text-sm text-muted-foreground">{totalSolved} / {totalProblems} bài</p>
+                    </div>
+                    <div className="text-2xl font-bold">{beatsPercentage}%</div>
+                  </div>
+                  <Progress value={beatsPercentage} className="h-3" />
+                </div>
+
+                {/* Individual Difficulty Progress */}
+                <div className="space-y-4">
+                  {/* Easy */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-green-600 dark:text-green-400">Dễ</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold">{profile.easy_ac.solved}/{profile.easy_ac.total}</span>
+                        <span className="text-xs text-muted-foreground">({easyPercentage}%)</span>
                       </div>
                     </div>
+                    <Progress 
+                      value={easyPercentage} 
+                      className="h-2 [&>div]:bg-green-500" 
+                    />
+                  </div>
 
-                    {/* Stats */}
-                    <div className="flex-1 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-green-600">Easy</span>
-                        <span className="font-semibold">{profile.easy_ac.solved}/{profile.easy_ac.total}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-yellow-600">Med.</span>
-                        <span className="font-semibold">{profile.medium_ac.solved}/{profile.medium_ac.total}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-red-600">Hard</span>
-                        <span className="font-semibold">{profile.hard_ac.solved}/{profile.hard_ac.total}</span>
+                  {/* Medium */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-yellow-600 dark:text-yellow-400">Trung bình</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold">{profile.medium_ac.solved}/{profile.medium_ac.total}</span>
+                        <span className="text-xs text-muted-foreground">({mediumPercentage}%)</span>
                       </div>
                     </div>
+                    <Progress 
+                      value={mediumPercentage} 
+                      className="h-2 [&>div]:bg-yellow-500" 
+                    />
                   </div>
-                </CardContent>
-              </Card>
 
-              {/* Badges Card */}
-              <Card>
-                <CardContent className="p-6">
-                  <div className="mb-6">
-                      <div className="mb-2 text-sm text-muted-foreground">Huy hiệu</div>
-                    <div className="text-4xl font-bold">0</div>
+                  {/* Hard */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-red-600 dark:text-red-400">Khó</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold">{profile.hard_ac.solved}/{profile.hard_ac.total}</span>
+                        <span className="text-xs text-muted-foreground">({hardPercentage}%)</span>
+                      </div>
+                    </div>
+                    <Progress 
+                      value={hardPercentage} 
+                      className="h-2 [&>div]:bg-red-500" 
+                    />
                   </div>
-                  <div className="rounded-lg border bg-muted/30 p-4 text-center">
-                      <div className="mb-1 text-xs text-muted-foreground">Huy hiệu bị khóa</div>
-                      <div className="font-semibold">Thử thách LeetCode tháng 10</div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Submission Heatmap */}
             <Card>
@@ -350,9 +297,6 @@ const Profile = () => {
             <Tabs defaultValue="recent">
               <TabsList>
                 <TabsTrigger value="recent">📋 AC gần đây</TabsTrigger>
-                <TabsTrigger value="list">📝 Danh sách</TabsTrigger>
-                <TabsTrigger value="solutions">✅ Giải pháp</TabsTrigger>
-                <TabsTrigger value="discuss">💬 Thảo luận</TabsTrigger>
               </TabsList>
 
               <TabsContent value="recent" className="mt-6">
@@ -384,12 +328,6 @@ const Profile = () => {
               <TabsContent value="solutions">
                 <Card className="p-8 text-center">
                   <p className="text-muted-foreground">Chưa có giải pháp nào được chia sẻ.</p>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="discuss">
-                <Card className="p-8 text-center">
-                  <p className="text-muted-foreground">Chưa có thảo luận nào.</p>
                 </Card>
               </TabsContent>
             </Tabs>

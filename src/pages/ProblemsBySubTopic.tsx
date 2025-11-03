@@ -11,18 +11,18 @@ import { DIFFICULTY_COLORS } from "@/constants";
 import { Check, Clock, Users } from "lucide-react";
 import { useMemo } from "react";
 
-const DIFFICULTY_LABEL = (d: number): 'Easy' | 'Medium' | 'Hard' => {
-  if (d <= 2) return 'Easy';
-  if (d === 3) return 'Medium';
-  return 'Hard';
+const DIFFICULTY_LABEL = (d: number): 'Dễ' | 'Trung bình' | 'Khó' => {
+  if (d <= 2) return 'Dễ';
+  if (d === 3) return 'Trung bình';
+  return 'Khó';
 };
 
 const DifficultyTabs = ({ value, onChange }: { value: string; onChange: (val: string)=>void }) => {
   const items = [
-    { key: '', label: 'All' },
-    { key: '1,2', label: 'Easy' },
-    { key: '3', label: 'Medium' },
-    { key: '4,5', label: 'Hard' },
+    { key: '', label: 'Tất cả' },
+    { key: '1,2', label: 'Dễ' },
+    { key: '3', label: 'Trung bình' },
+    { key: '4,5', label: 'Khó' },
   ];
   return (
     <div className="flex gap-2">

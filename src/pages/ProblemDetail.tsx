@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronLeft, ChevronRight, List, Settings, Bell } from "lucide-react";
+import { ChevronLeft, ChevronRight, List, Settings } from "lucide-react";
 import ProblemDescription from "@/components/ProblemDescription";
 import CodeEditor from "@/components/CodeEditor";
 import { problemsService } from "@/services";
@@ -39,10 +39,10 @@ const ProblemDetail = () => {
     };
   }, [id]);
 
-  const mapDifficulty = (d: number): "Easy" | "Med" | "Hard" => {
-    if (d <= 2) return "Easy";
-    if (d === 3) return "Med";
-    return "Hard";
+  const mapDifficulty = (d: number): "Dễ" | "Trung bình" | "Khó" => {
+    if (d <= 2) return "Dễ";
+    if (d === 3) return "Trung bình";
+    return "Khó";
   };
 
   const problemData = useMemo(() => {
@@ -93,13 +93,6 @@ const ProblemDetail = () => {
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon">
             <Settings className="h-5 w-5" />
-          </Button>
-          <Button variant="ghost" size="icon">
-            <Bell className="h-5 w-5" />
-          </Button>
-          <span className="text-sm text-muted-foreground">0</span>
-          <Button variant="ghost" className="text-primary hover:text-primary">
-            Premium
           </Button>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,7 +22,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isLoggingIn, loginError } = useAuthContext();
+  const { login, isLoggingIn, loginError, isAuthenticated, isLoading } = useAuthContext();
   
   const from = location.state?.from?.pathname || '/';
 
@@ -34,10 +34,17 @@ const Login = () => {
     resolver: zodResolver(loginSchema),
   });
 
+  // Redirect when authenticated
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate, from]);
+
   const onSubmit = async (data: { username: string; password: string }) => {
     try {
       await login(data);
-      navigate(from, { replace: true });
+      // Navigation will be handled by useEffect when isAuthenticated becomes true
     } catch (error) {
       // Error is handled by the useAuth hook
     }
