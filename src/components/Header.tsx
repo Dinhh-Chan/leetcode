@@ -47,6 +47,8 @@ const Header = memo(() => {
           <ChevronLeft className="h-5 w-5" />
         </Button>
 
+        
+
         <nav className="flex flex-1 items-center space-x-6">
           {NAV_ITEMS.map((item) => (
             <Link
