@@ -45,6 +45,7 @@ export const API_ENDPOINTS = {
     detail: (id: string) => `/contests/${id}`,
     join: (id: string) => `/contests/${id}/join`,
     leaderboard: (id: string) => `/contests/${id}/leaderboard`,
+    start: (id: string) => `/contest-users/${id}/start`,
   },
   // Discussions
   discussions: {

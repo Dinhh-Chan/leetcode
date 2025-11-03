@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { contestsService } from "@/services";
 import { Contest } from "@/services/types/contests";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 const ContestDetail = () => {
   const { id } = useParams();
@@ -17,25 +18,57 @@ const ContestDetail = () => {
   const [contest, setContest] = useState<Contest | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
+
+  const loadContest = useCallback(async () => {
+    if (!id) return;
+    try {
+      setIsLoading(true);
+      const data = await contestsService.getContest(id);
+      setContest(data);
+    } catch (e: any) {
+      setError(e?.message || "Không thể tải thông tin cuộc thi");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
 
   useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      try {
-        setIsLoading(true);
-        const data = await contestsService.getContest(id as string);
-        if (mounted) setContest(data);
-      } catch (e: any) {
-        if (mounted) setError(e?.message || "Không thể tải thông tin cuộc thi");
-      } finally {
-        if (mounted) setIsLoading(false);
-      }
-    };
-    if (id) load();
-    return () => {
-      mounted = false;
-    };
-  }, [id]);
+    loadContest();
+  }, [loadContest]);
+
+  const handleJoinContest = async () => {
+    if (!id) return;
+    
+    try {
+      setIsJoining(true);
+      await contestsService.joinContest(id);
+      toast.success("Đăng ký thành công! Trạng thái: Đang chờ");
+      // Reload contest data to get updated status
+      await loadContest();
+    } catch (e: any) {
+      toast.error(e?.message || "Không thể đăng ký cuộc thi");
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  const handleStartContest = async () => {
+    if (!id || !contest) return;
+    
+    try {
+      setIsStarting(true);
+      await contestsService.startContest(id, true);
+      toast.success("Bắt đầu cuộc thi thành công!");
+      // Reload contest data to get updated is_start status
+      await loadContest();
+    } catch (e: any) {
+      toast.error(e?.message || "Không thể bắt đầu cuộc thi");
+    } finally {
+      setIsStarting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -71,6 +104,11 @@ const ContestDetail = () => {
   const contestProblems = contest.contest_problems || [];
   // Assuming ranking is passed in contest object or needs to be fetched separately
   const ranking = (contest as any).ranking || [];
+  
+  const status = contest.status || 'not-participant';
+  const isStart = contest.is_start || false;
+  const shouldShowProblemsAndRanking = isStart;
+  const isParticipant = status !== 'not-participant';
 
   return (
     <div className="min-h-screen bg-background">
@@ -114,32 +152,52 @@ const ContestDetail = () => {
                   </div>
                 </div>
               </div>
-              {!contest.is_enrolled && (
-                <Button>Đăng ký</Button>
-              )}
+              <div className="flex gap-2">
+                {status === 'not-participant' && (
+                  <Button 
+                    onClick={handleJoinContest}
+                    disabled={isJoining}
+                  >
+                    {isJoining ? "Đang xử lý..." : "Đăng ký"}
+                  </Button>
+                )}
+                {isParticipant && !isStart && (
+                  <Button 
+                    onClick={handleStartContest}
+                    disabled={isStarting}
+                  >
+                    {isStarting ? "Đang xử lý..." : "Bắt đầu"}
+                  </Button>
+                )}
+              </div>
             </div>
           </CardHeader>
         </Card>
 
         {/* Tabs Section */}
-        <Tabs defaultValue="problems" className="mb-8">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="problems">
-              <FileCode className="mr-2 h-4 w-4" />
-              Bài tập ({contestProblems.length})
-            </TabsTrigger>
+        <Tabs defaultValue={shouldShowProblemsAndRanking ? "problems" : "participants"} className="mb-8">
+          <TabsList className={`grid w-full ${shouldShowProblemsAndRanking ? 'grid-cols-3' : 'grid-cols-1'}`}>
+            {shouldShowProblemsAndRanking && (
+              <TabsTrigger value="problems">
+                <FileCode className="mr-2 h-4 w-4" />
+                Bài tập ({contestProblems.length})
+              </TabsTrigger>
+            )}
             <TabsTrigger value="participants">
               <Users className="mr-2 h-4 w-4" />
               Người tham gia ({contestUsers.length})
             </TabsTrigger>
-            <TabsTrigger value="ranking">
-              <Award className="mr-2 h-4 w-4" />
-              Bảng xếp hạng
-            </TabsTrigger>
+            {shouldShowProblemsAndRanking && (
+              <TabsTrigger value="ranking">
+                <Award className="mr-2 h-4 w-4" />
+                Bảng xếp hạng
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Problems Tab */}
-          <TabsContent value="problems" className="mt-6">
+          {shouldShowProblemsAndRanking && (
+            <TabsContent value="problems" className="mt-6">
             {contestProblems.length === 0 ? (
               <Card>
                 <CardContent className="p-8 text-center">
@@ -184,7 +242,8 @@ const ContestDetail = () => {
                 ))}
               </div>
             )}
-          </TabsContent>
+            </TabsContent>
+          )}
 
           {/* Participants Tab */}
           <TabsContent value="participants" className="mt-6">
@@ -228,7 +287,8 @@ const ContestDetail = () => {
           </TabsContent>
 
           {/* Ranking Tab */}
-          <TabsContent value="ranking" className="mt-6">
+          {shouldShowProblemsAndRanking && (
+            <TabsContent value="ranking" className="mt-6">
             {ranking.length === 0 ? (
               <Card>
                 <CardContent className="p-8 text-center">
@@ -275,7 +335,8 @@ const ContestDetail = () => {
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>

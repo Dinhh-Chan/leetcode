@@ -67,6 +67,22 @@ class ContestsService {
     );
   }
 
+  // Start a contest (for enrolled users) or enroll and start (for non-enrolled users)
+  async startContest(id: string, isEnrolled: boolean = false): Promise<void> {
+    const token = this.getToken();
+    const body = isEnrolled ? {} : { contest_id: id };
+    await axios.post(
+      `${API_CONFIG.baseURL}${API_ENDPOINTS.contests.start(id)}`,
+      body,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      }
+    );
+  }
+
   // Get my contests
   async getMyContests(): Promise<MyContestsResponse> {
     const token = this.getToken();

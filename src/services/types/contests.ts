@@ -22,6 +22,8 @@ export interface Contest {
   contest_users?: ContestUser[];
   contest_problems?: ContestProblem[];
   is_enrolled?: boolean;
+  is_start?: boolean;
+  status?: 'pending' | 'enrolled' | 'not-participant';
   createdAt?: string;
   updatedAt?: string;
 }
