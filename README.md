@@ -74,6 +74,53 @@ npm run dev
 
 5. Open [http://localhost:5173](http://localhost:5173) in your browser.
 
+## 🌐 Deployment on Vercel
+
+### Deploy to Vercel
+
+1. **Push your code to GitHub**:
+```bash
+git add .
+git commit -m "Prepare for Vercel deployment"
+git push origin main
+```
+
+2. **Connect to Vercel**:
+   - Go to [vercel.com](https://vercel.com)
+   - Sign in with your GitHub account
+   - Click "Add New Project"
+   - Import your GitHub repository
+
+3. **Configure Project Settings**:
+   - **Framework Preset**: Vite
+   - **Root Directory**: `./` (default)
+   - **Build Command**: `npm run build` (auto-detected)
+   - **Output Directory**: `dist` (auto-detected)
+   - **Install Command**: `npm install` (auto-detected)
+
+4. **Set Environment Variables** (if needed):
+   - In Vercel project settings → Environment Variables
+   - Add any required environment variables (e.g., `VITE_API_BASE_URL`)
+
+5. **Deploy**:
+   - Click "Deploy"
+   - Vercel will automatically build and deploy your app
+   - Your app will be available at `https://your-project.vercel.app`
+
+### Vercel Configuration
+
+The project includes a `vercel.json` file that configures:
+- Build settings for Vite
+- Routing rules for SPA (Single Page Application)
+- All routes redirect to `index.html` for client-side routing
+
+### Custom Domain
+
+1. Go to your project settings in Vercel
+2. Navigate to "Domains"
+3. Add your custom domain
+4. Follow DNS configuration instructions
+
 ## 📝 Available Scripts
 
 - `npm run dev` - Start development server
