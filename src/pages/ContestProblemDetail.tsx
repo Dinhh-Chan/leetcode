@@ -6,6 +6,7 @@ import { ChevronLeft, List, Settings } from "lucide-react";
 import ProblemDescription from "@/components/ProblemDescription";
 import CodeEditor from "@/components/CodeEditor";
 import { problemsService } from "@/services";
+import { contestsService } from "@/services";
 import { Problem as ApiProblem } from "@/services/types/problems";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -13,6 +14,7 @@ import { contestSubmissionsService } from "@/services/contestSubmissions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Clock, HardDrive } from "lucide-react";
+import { toast } from "sonner";
 
 const ContestProblemDetail = () => {
   const { contestId, problemId } = useParams();
@@ -24,6 +26,24 @@ const ContestProblemDetail = () => {
   const [error, setError] = useState<string | null>(null);
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [isLoadingSubmissions, setIsLoadingSubmissions] = useState(false);
+
+  // Guard: chặn truy cập nếu cuộc thi đã kết thúc
+  useEffect(() => {
+    const checkContestEnded = async () => {
+      if (!contestId) return;
+      try {
+        const c = await contestsService.getContest(contestId);
+        const ended = new Date(c.end_time).getTime() <= Date.now();
+        if (ended) {
+          toast.error('Cuộc thi đã kết thúc. Bạn không thể truy cập bài nữa.');
+          navigate(`/contest/${contestId}`);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    checkContestEnded();
+  }, [contestId, navigate]);
 
   useEffect(() => {
     let mounted = true;

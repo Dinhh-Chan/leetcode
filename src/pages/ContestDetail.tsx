@@ -134,7 +134,14 @@ const ContestDetail = () => {
   
   const status = contest.status || 'not-participant';
   const isStart = contest.is_start || false;
-  const shouldShowProblemsAndRanking = isStart;
+  const isEnded = (() => {
+    try {
+      return new Date(contest.end_time).getTime() <= Date.now();
+    } catch {
+      return false;
+    }
+  })();
+  const shouldShowProblemsAndRanking = isStart && !isEnded;
   const isParticipant = status !== 'not-participant';
 
   return (
@@ -180,21 +187,29 @@ const ContestDetail = () => {
                 </div>
               </div>
               <div className="flex gap-2">
-                {status === 'not-participant' && (
-                  <Button 
-                    onClick={handleJoinContest}
-                    disabled={isJoining}
-                  >
-                    {isJoining ? "Đang xử lý..." : "Đăng ký"}
+                {isEnded ? (
+                  <Button disabled variant="secondary">
+                    Đã kết thúc
                   </Button>
-                )}
-                {isParticipant && !isStart && (
-                  <Button 
-                    onClick={handleStartContest}
-                    disabled={isStarting}
-                  >
-                    {isStarting ? "Đang xử lý..." : "Bắt đầu"}
-                  </Button>
+                ) : (
+                  <>
+                    {status === 'not-participant' && (
+                      <Button 
+                        onClick={handleJoinContest}
+                        disabled={isJoining}
+                      >
+                        {isJoining ? "Đang xử lý..." : "Đăng ký"}
+                      </Button>
+                    )}
+                    {isParticipant && !isStart && (
+                      <Button 
+                        onClick={handleStartContest}
+                        disabled={isStarting}
+                      >
+                        {isStarting ? "Đang xử lý..." : "Bắt đầu"}
+                      </Button>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -272,9 +287,13 @@ const ContestDetail = () => {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => navigate(`/contest/${contest._id}/problems/${item.problem?._id}`)}
+                          disabled={isEnded}
+                          onClick={() => {
+                            if (isEnded) return;
+                            navigate(`/contest/${contest._id}/problems/${item.problem?._id}`);
+                          }}
                         >
-                          Giải bài
+                          {isEnded ? 'Đã kết thúc' : 'Giải bài'}
                         </Button>
                       </div>
                     </CardContent>
