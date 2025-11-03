@@ -123,236 +123,25 @@ const EditProfile = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      {/* Profile Header */}
-      <div className="border-b bg-muted/30">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center gap-4">
-            <div className="h-16 w-16 rounded bg-primary/20">
-              <img 
-                src="/default-avatar.png"
-                alt="Profile"
-                className="h-full w-full rounded"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.fullname || userData.username)}&background=21791f&color=fff&size=128`;
-                }}
-              />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold">{userData.fullname || userData.username}</h1>
-                <ExternalLink className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <p className="text-sm text-muted-foreground">ID: {userData.username}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-          {/* Left Sidebar */}
-          <div className="space-y-1">
-            {sidebarItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => !item.external && setActiveTab(item.id)}
-                  className={`w-full flex items-center gap-3 rounded px-4 py-3 text-left transition-colors ${
-                    activeTab === item.id
-                      ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-muted'
-                  }`}
-                >
-                  {Icon && <Icon className="h-5 w-5" />}
-                  <span>{item.label}</span>
-                  {item.external && (
-                    <ExternalLink className="ml-auto h-4 w-4" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Main Content */}
-          <div className="lg:col-span-3">
-            {activeTab === "basic" && (
-              <Card>
-                <CardContent className="p-6">
-                  <h2 className="mb-6 text-xl font-semibold">Thông tin cơ bản</h2>
-                  
-                  {/* Basic Info Section */}
-                  <div className="mb-8 space-y-4">
-                    <h3 className="text-sm font-semibold uppercase text-muted-foreground">Thông tin cơ bản</h3>
-                    
-                    <div className="flex items-center justify-between border-b pb-4">
-                      <div>
-                        <Label>Tên</Label>
-                        <Input
-                          value={formData.fullname || ''}
-                          onChange={(e) => setFormData({ ...formData, fullname: e.target.value })}
-                          className="mt-2 max-w-md"
-                        />
-                      </div>
-                      <Button variant="ghost">Sửa</Button>
-                    </div>
-
-                    <div className="flex items-center justify-between border-b pb-4">
-                      <div>
-                        <Label>Giới tính</Label>
-                        <Select 
-                          value={formData.gender || ''} 
-                          onValueChange={(value) => setFormData({ ...formData, gender: value })}
-                        >
-                          <SelectTrigger className="mt-2 max-w-md">
-                            <SelectValue placeholder="Chọn giới tính" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Male">Nam</SelectItem>
-                            <SelectItem value="Female">Nữ</SelectItem>
-                            <SelectItem value="Other">Khác</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <Button variant="ghost">Sửa</Button>
-                    </div>
-
-                    <div className="flex items-center justify-between border-b pb-4">
-                      <div>
-                        <Label>Địa điểm</Label>
-                        <Input
-                          placeholder="Địa điểm của bạn"
-                          className="mt-2 max-w-md"
-                        />
-                      </div>
-                      <Button variant="ghost">+2 Sửa</Button>
-                    </div>
-
-                    <div className="flex items-center justify-between border-b pb-4">
-                      <div>
-                        <Label>Ngày sinh</Label>
-                        <Input
-                          type="date"
-                          value={formData.dob ? formData.dob.split('T')[0] : ''}
-                          onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
-                          className="mt-2 max-w-md"
-                        />
-                      </div>
-                      <Button variant="ghost">Sửa</Button>
-                    </div>
-
-                    <div className="flex items-center justify-between border-b pb-4">
-                      <div className="flex-1">
-                        <Label>Tóm tắt</Label>
-                        <Textarea
-                          placeholder="Cho chúng tôi biết về bạn (sở thích, kinh nghiệm, v.v.)"
-                          className="mt-2"
-                          rows={4}
-                        />
-                      </div>
-                      <Button variant="ghost">+2 Sửa</Button>
-                    </div>
-                  </div>
-
-                  {/* Experience Section */}
-                  <div className="mb-8 space-y-4">
-                    <h3 className="text-sm font-semibold uppercase text-muted-foreground">Kinh nghiệm</h3>
-                    
-                    <div className="flex items-center justify-between border-b pb-4">
-                      <div className="flex-1">
-                        <Label>Công việc</Label>
-                        <Input
-                          placeholder="Thêm nơi làm việc"
-                          className="mt-2"
-                        />
-                      </div>
-                      <Button variant="ghost">+2 Sửa</Button>
-                    </div>
-
-                    <div className="flex items-center justify-between border-b pb-4">
-                      <div className="flex-1">
-                        <Label>Học vấn</Label>
-                        <Input
-                          placeholder="Thêm trường học"
-                          className="mt-2"
-                        />
-                      </div>
-                      <Button variant="ghost">+2 Sửa</Button>
-                    </div>
-                  </div>
-
-                  {/* Skills Section */}
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-semibold uppercase text-muted-foreground">Kỹ năng</h3>
-                    
-                    <div className="flex items-center justify-between border-b pb-4">
-                      <div className="flex-1">
-                        <Label>Kỹ năng kỹ thuật</Label>
-                        <Textarea
-                          placeholder="Kỹ năng của bạn."
-                          className="mt-2"
-                          rows={3}
-                        />
-                      </div>
-                      <Button variant="ghost">Sửa</Button>
-                    </div>
-                  </div>
-
-                  {/* Save Button */}
-                  <div className="mt-8 flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => navigate(-1)}>
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={handleSubmit}
-                      disabled={updateMutation.isPending}
-                    >
-                      {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Save Changes
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {activeTab === "account" && (
-              <Card>
-                <CardContent className="p-6">
-                  <h2 className="mb-6 text-xl font-semibold">Tài khoản</h2>
-                  <p className="text-muted-foreground">Cài đặt tài khoản sắp có...</p>
-                </CardContent>
-              </Card>
-            )}
-
-            {activeTab === "lab" && (
-              <Card>
-                <CardContent className="p-6">
-                  <h2 className="mb-6 text-xl font-semibold">Phòng thí nghiệm</h2>
-                  <p className="text-muted-foreground">Cài đặt phòng thí nghiệm sắp có...</p>
-                </CardContent>
-              </Card>
-            )}
-
-            {activeTab === "privacy" && (
-              <Card>
-                <CardContent className="p-6">
-                  <h2 className="mb-6 text-xl font-semibold">Quyền riêng tư</h2>
-                  <p className="text-muted-foreground">Cài đặt quyền riêng tư sắp có...</p>
-                </CardContent>
-              </Card>
-            )}
-
-            {activeTab === "notifications" && (
-              <Card>
-                <CardContent className="p-6">
-                  <h2 className="mb-6 text-xl font-semibold">Thông báo</h2>
-                  <p className="text-muted-foreground">Cài đặt thông báo sắp có...</p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </div>
+        <Card>
+          <CardContent className="p-12 text-center">
+            <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-muted">
+              <Settings className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <h2 className="mb-4 text-2xl font-semibold">Chỉnh sửa hồ sơ</h2>
+            <p className="mb-8 text-lg text-muted-foreground">
+              Tính năng này đang trong quá trình phát triển
+            </p>
+            <p className="mb-8 text-sm text-muted-foreground">
+              Chúng tôi đang làm việc để mang đến cho bạn trải nghiệm chỉnh sửa hồ sơ tốt nhất.
+              Vui lòng quay lại sau!
+            </p>
+            <Button onClick={() => navigate(-1)}>
+              Quay lại
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
