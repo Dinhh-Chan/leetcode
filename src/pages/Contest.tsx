@@ -18,7 +18,7 @@ const Contest = () => {
     myContests,
     isLoadingMyContests,
     myContestsError
-  } = useContests();
+  , joinContest, isJoining } = useContests();
 
 
   return (
@@ -87,10 +87,26 @@ const Contest = () => {
                             </Button>
                           );
                         }
+                        // Check user status from myContests
+                        const mine = myContests.find((mc: any) => mc.contest?._id === contest._id);
+                        const myStatus = mine?.status; // 'pending' | 'enrolled'
+                        if (myStatus === 'pending') {
+                          return (
+                            <Button size="sm" variant="secondary" disabled>
+                              Chờ được duyệt
+                            </Button>
+                          );
+                        }
                         return (
                           <>
-                            {!contest.is_enrolled && (
-                              <Button size="sm">Đăng ký</Button>
+                            {!mine && !contest.is_enrolled && (
+                              <Button 
+                                size="sm"
+                                onClick={() => joinContest(contest._id)}
+                                disabled={isJoining}
+                              >
+                                {isJoining ? 'Đang xử lý...' : 'Đăng ký'}
+                              </Button>
                             )}
                             <Button 
                               variant="outline" 
