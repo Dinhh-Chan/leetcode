@@ -2,7 +2,7 @@ import React, { memo, useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Check, Circle, Star, Clock, Users, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useProblems } from "@/hooks/useProblems";
+import type { UseProblemsResult } from "@/hooks/useProblems";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { Problem } from "@/services/types/problems";
 import { DIFFICULTY_COLORS, PROBLEM_STATUS } from "@/constants";
@@ -10,8 +10,20 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
-const ProblemList = memo(() => {
-  const { problems, isLoading, currentPage, pagination, updatePagination } = useProblems();
+interface ProblemListProps {
+  state: UseProblemsResult;
+}
+
+const ProblemList = memo<ProblemListProps>(({ state }) => {
+  const {
+    problems,
+    isLoading,
+    isFetching,
+    currentPage,
+    pagination,
+    updatePagination,
+    searchQuery,
+  } = state;
   const { isAuthenticated } = useAuthContext();
   const [sortBy, setSortBy] = useState<'title' | 'difficulty' | 'acceptance'>('title');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -75,7 +87,7 @@ const ProblemList = memo(() => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading && !isFetching) {
     return (
       <div className="rounded-lg border bg-card">
         {Array.from({ length: 10 }).map((_, index) => (
@@ -90,6 +102,8 @@ const ProblemList = memo(() => {
       </div>
     );
   }
+
+  const isBackgroundLoading = isFetching && !isLoading;
 
   return (
     <div className="space-y-4">
@@ -125,13 +139,18 @@ const ProblemList = memo(() => {
       </div>
 
       {/* Problems list */}
-      <div className="rounded-lg border bg-card">
+      <div className="rounded-lg border bg-card relative">
+        {isBackgroundLoading && (
+          <div className="absolute inset-0 z-10 rounded-lg bg-background/60 backdrop-blur-sm transition-opacity" />
+        )}
         {displayProblems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
             <TrendingUp className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">Không tìm thấy bài tập</h3>
             <p className="text-muted-foreground text-center">
-              Hãy thử điều chỉnh bộ lọc hoặc tiêu chí tìm kiếm
+              {searchQuery?.trim()
+                ? 'Không có bài phù hợp với từ khóa, thử điều chỉnh từ khóa hoặc độ khó.'
+                : 'Hãy thử điều chỉnh bộ lọc hoặc tiêu chí tìm kiếm.'}
             </p>
           </div>
         ) : (
@@ -149,7 +168,7 @@ const ProblemList = memo(() => {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">{problem.id}.</span>
-                  <Link 
+                  <Link
                     to={`/problems/${problem._id}`}
                     className="cursor-pointer text-sm font-medium hover:text-primary truncate"
                   >
@@ -195,6 +214,7 @@ const ProblemList = memo(() => {
                   size="sm"
                   className="h-6 w-6 p-0"
                   onClick={() => {/* Handle like */}}
+                  disabled={isBackgroundLoading}
                 >
                   <Star className="h-3 w-3" />
                 </Button>
@@ -215,7 +235,7 @@ const ProblemList = memo(() => {
               variant="outline"
               size="sm"
               onClick={() => updatePagination(currentPage - 1)}
-              disabled={currentPage === 1}
+              disabled={currentPage === 1 || isBackgroundLoading}
             >
               Trước
             </Button>
@@ -226,7 +246,7 @@ const ProblemList = memo(() => {
               variant="outline"
               size="sm"
               onClick={() => updatePagination(currentPage + 1)}
-              disabled={currentPage === pagination.totalPages}
+              disabled={currentPage === pagination.totalPages || isBackgroundLoading}
             >
               Sau
             </Button>

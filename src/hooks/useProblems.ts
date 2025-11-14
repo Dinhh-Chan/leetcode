@@ -4,12 +4,45 @@ import { problemsService } from '@/services/problems';
 import { Problem, ProblemsListResponse } from '@/services/types/problems';
 import { FilterOptions, CodeSubmission } from '@/types';
 import { toast } from 'sonner';
+import { FilterCondition } from '@/components/FilterDialog';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 export const useProblems = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuthContext();
   const [filters, setFilters] = useState<FilterOptions>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [searchQuery, setSearchQueryState] = useState('');
+  const [filterCondition, setFilterCondition] = useState<FilterCondition | null>(null);
+  const [sort, setSort] = useState<string | null>(null);
+  const [order, setOrder] = useState<'asc' | 'desc' | null>(null);
+
+  // Build condition from search query and filter
+  const buildCondition = useCallback((): FilterCondition | null => {
+    const condition: FilterCondition = filterCondition ? { ...filterCondition } : {};
+
+    // Add search query as regex if exists (merge with existing name filter if any)
+    if (searchQuery.trim()) {
+      condition.name = { $regex: searchQuery.trim() };
+    }
+
+    // Check if there are any filters applied
+    const hasFilters = Object.keys(condition).length > 0;
+
+    // Auto filter is_public = true if user is STUDENT and has other filters
+    // Only apply auto-filter when there are other filters to avoid sending condition when no filters
+    if (user?.systemRole === 'Student' && hasFilters && condition.is_public === undefined) {
+      condition.is_public = true;
+    }
+
+    // Return null if no filters (don't send condition parameter)
+    if (Object.keys(condition).length === 0) {
+      return null;
+    }
+
+    return condition;
+  }, [filterCondition, searchQuery, user]);
 
   // Get problems list
   const {
@@ -17,10 +50,15 @@ export const useProblems = () => {
     isLoading: isLoadingProblems,
     error: problemsError,
     refetch: refetchProblems,
-  } = useQuery({
-    queryKey: ['problems', currentPage, pageSize, filters],
-    queryFn: () => problemsService.getProblems(currentPage, pageSize, filters),
+    isFetching: isFetchingProblems,
+  } = useQuery<ProblemsListResponse>({
+    queryKey: ['problems', currentPage, pageSize, filterCondition, searchQuery, sort, order],
+    queryFn: () => {
+      const condition = buildCondition();
+      return problemsService.getProblems(currentPage, pageSize, filters, condition, sort || undefined, order || undefined);
+    },
     staleTime: 2 * 60 * 1000, // 2 minutes
+    placeholderData: (previousData) => previousData,
   });
 
   // Submit solution mutation
@@ -89,8 +127,13 @@ export const useProblems = () => {
   };
 
   // Search problems
-  const searchProblems = useCallback(async (query: string, page: number = 1) => {
-    return problemsService.searchProblems(query, page, pageSize);
+  const searchProblems = useCallback(async (query: string, page: number = 1, difficulty?: number) => {
+    return problemsService.searchProblems({
+      name: query,
+      page,
+      limit: pageSize,
+      difficulty,
+    });
   }, [pageSize]);
 
   // Get random problem
@@ -153,6 +196,24 @@ export const useProblems = () => {
     setCurrentPage(1); // Reset to first page when filters change
   }, []);
 
+  // Update filter condition
+  const updateFilterCondition = useCallback((condition: FilterCondition | null) => {
+    setFilterCondition(condition);
+    setCurrentPage(1);
+  }, []);
+
+  // Update sort
+  const updateSort = useCallback((newSort: string | null, newOrder: 'asc' | 'desc' | null) => {
+    setSort(newSort);
+    setOrder(newOrder);
+    setCurrentPage(1);
+  }, []);
+
+  const setSearchQuery = useCallback((value: string) => {
+    setSearchQueryState(value);
+    setCurrentPage(1);
+  }, []);
+
   // Update pagination
   const updatePagination = useCallback((page: number, size?: number) => {
     setCurrentPage(page);
@@ -166,9 +227,14 @@ export const useProblems = () => {
     problems: problemsData?.data || [],
     pagination: problemsData?.pagination,
     filters,
+    filterCondition,
+    sort,
+    order,
     currentPage,
     pageSize,
+    searchQuery,
     isLoading: isLoadingProblems,
+    isFetching: isFetchingProblems,
     error: problemsError,
     
     // Actions
@@ -183,8 +249,11 @@ export const useProblems = () => {
     getProblemTags,
     getProblemsByTag,
     updateFilters,
+    updateFilterCondition,
+    updateSort,
     updatePagination,
     refetchProblems,
+    setSearchQuery,
     
     // Hooks
     useProblem,
@@ -202,3 +271,5 @@ export const useProblems = () => {
     unlikeError: unlikeProblemMutation.error,
   };
 };
+
+export type UseProblemsResult = ReturnType<typeof useProblems>;

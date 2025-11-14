@@ -40,6 +40,32 @@ export interface SubmissionDetailResponse {
   data: SubmitResponse['data'];
 }
 
+export interface RankingUser {
+  _id: string;
+  username: string;
+  email: string;
+  fullName: string;
+  systemRole: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RankingItem {
+  rankNumber: number;
+  user: RankingUser;
+  totalProblemsSolved: number;
+}
+
+export interface RankingResponse {
+  success: boolean;
+  data: RankingItem[];
+}
+
+export interface ProblemSubmissionsResponse {
+  success: boolean;
+  data: SubmitResponse['data'][];
+}
+
 export const submissionsService = {
   async submit(request: SubmitRequest): Promise<SubmitResponse> {
     const res = await apiClient.post<SubmitResponse>(
@@ -52,6 +78,20 @@ export const submissionsService = {
   async getSubmissionDetail(submissionId: string): Promise<SubmissionDetailResponse> {
     const res = await apiClient.get<SubmissionDetailResponse>(
       `/student-submissions/${submissionId}`
+    );
+    return res.data;
+  },
+
+  async getRanking(limit: number = 200): Promise<RankingResponse> {
+    const res = await apiClient.get<RankingResponse>(
+      `/student-submissions/ranking?limit=${limit}`
+    );
+    return res.data;
+  },
+
+  async getProblemSubmissions(problemId: string): Promise<ProblemSubmissionsResponse> {
+    const res = await apiClient.get<ProblemSubmissionsResponse>(
+      `/student-submissions/problem/${problemId}/submissions`
     );
     return res.data;
   },

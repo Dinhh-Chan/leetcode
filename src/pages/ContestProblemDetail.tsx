@@ -164,7 +164,7 @@ const ContestProblemDetail = () => {
                 {problemData && <ProblemDescription problemData={problemData} />}
               </TabsContent>
 
-              <TabsContent value="submissions" className="m-0 flex-1 overflow-auto p-6">
+              <TabsContent value="submissions" className="m-0 flex-1 overflow-auto scrollbar-custom p-6">
                 {isLoadingSubmissions ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />

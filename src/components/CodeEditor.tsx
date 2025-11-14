@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -25,20 +25,35 @@ interface CodeEditorProps {
   studentId?: string;
   contestId?: string;
   isContestSubmission?: boolean;
+  onCodeChange?: (code: string) => void;
 }
 
-const CodeEditor = ({ initialCode = "", language = "python", testCases = [], problemId, studentId, contestId, isContestSubmission = false }: CodeEditorProps) => {
+const CodeEditor = ({ initialCode = "", language = "python", testCases = [], problemId, studentId, contestId, isContestSubmission = false, onCodeChange }: CodeEditorProps) => {
   const [code, setCode] = useState(initialCode);
   const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState("testcase");
   const [selectedTestIdx, setSelectedTestIdx] = useState(0);
   const [selectedResultIdx, setSelectedResultIdx] = useState(0);
+  const [visibleTestCases, setVisibleTestCases] = useState(10); // Show first 10 testcases by default
   const { languages, isLoading: isLoadingLang } = useLanguages();
   const [selectedLangId, setSelectedLangId] = useState<number | null>(null);
   const [results, setResults] = useState<BatchSubmissionResponse[] | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Update code when initialCode changes (e.g., when problem loads)
+  useEffect(() => {
+    const nextCode = initialCode || "";
+    setCode(nextCode);
+    onCodeChange?.(nextCode);
+  }, [initialCode, onCodeChange]);
+
+  const handleEditorChange = (val?: string) => {
+    const next = val ?? "";
+    setCode(next);
+    onCodeChange?.(next);
+  };
 
   // Default select Python when languages are loaded
   if (!isLoadingLang && selectedLangId == null && languages.length) {
@@ -304,7 +319,7 @@ const CodeEditor = ({ initialCode = "", language = "python", testCases = [], pro
             height="100%"
             language={editorLanguage}
             value={code}
-            onChange={(val) => setCode(val || "")}
+            onChange={handleEditorChange}
             onMount={handleEditorDidMount}
             theme="vs-dark"
             options={{
@@ -336,7 +351,7 @@ const CodeEditor = ({ initialCode = "", language = "python", testCases = [], pro
               </TabsList>
             </div>
 
-            <TabsContent value="testcase" className="m-0 flex-1 overflow-auto p-4">
+            <TabsContent value="testcase" className="m-0 flex-1 overflow-auto scrollbar-custom p-4">
               {testCases.length > 0 ? (
                 <>
                   <div className="mb-2">
@@ -344,21 +359,35 @@ const CodeEditor = ({ initialCode = "", language = "python", testCases = [], pro
                       const idx = Number(String(v).replace('tc-',''));
                       if (!Number.isNaN(idx)) setSelectedTestIdx(idx);
                     }}>
-                      <TabsList className="h-8 flex-wrap">
-                        {testCases.map((_, i) => (
-                          <TabsTrigger key={i} value={`tc-${i}`} className="text-xs">Test case {i+1}</TabsTrigger>
-                        ))}
-                      </TabsList>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 overflow-x-auto scrollbar-custom">
+                          <TabsList className="h-8 inline-flex">
+                            {testCases.slice(0, visibleTestCases).map((_, i) => (
+                              <TabsTrigger key={i} value={`tc-${i}`} className="text-xs whitespace-nowrap">Test case {i+1}</TabsTrigger>
+                            ))}
+                          </TabsList>
+                        </div>
+                        {testCases.length > visibleTestCases && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs h-8 flex-shrink-0"
+                            onClick={() => setVisibleTestCases(testCases.length)}
+                          >
+                            Hiển thị thêm ({testCases.length - visibleTestCases})
+                          </Button>
+                        )}
+                      </div>
                     </Tabs>
                   </div>
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
                       <div className="mb-2 text-xs font-medium text-muted-foreground">Đầu vào</div>
-                      <pre className="kmark-pre overflow-auto rounded-md border p-3" style={{ whiteSpace: 'pre-wrap', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>{testCases[selectedTestIdx]?.input || ''}</pre>
+                      <pre className="kmark-pre overflow-auto rounded-md border p-3 max-h-48" style={{ whiteSpace: 'pre-wrap', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>{testCases[selectedTestIdx]?.input || ''}</pre>
                     </div>
                     <div>
                       <div className="mb-2 text-xs font-medium text-muted-foreground">Đầu ra mong đợi</div>
-                      <pre className="kmark-pre overflow-auto rounded-md border p-3" style={{ whiteSpace: 'pre-wrap', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>{testCases[selectedTestIdx]?.output || ''}</pre>
+                      <pre className="kmark-pre overflow-auto rounded-md border p-3 max-h-48" style={{ whiteSpace: 'pre-wrap', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>{testCases[selectedTestIdx]?.output || ''}</pre>
                     </div>
                   </div>
                 </>
@@ -367,7 +396,7 @@ const CodeEditor = ({ initialCode = "", language = "python", testCases = [], pro
               )}
             </TabsContent>
 
-            <TabsContent value="result" className="m-0 flex-1 overflow-auto p-4">
+            <TabsContent value="result" className="m-0 flex-1 overflow-auto scrollbar-custom p-4">
               {results ? (
                 <>
                   {isRunning && (
@@ -392,27 +421,41 @@ const CodeEditor = ({ initialCode = "", language = "python", testCases = [], pro
                       const idx = Number(String(v).replace('result-', ''));
                       if (!Number.isNaN(idx)) setSelectedResultIdx(idx);
                     }}>
-                      <TabsList className="h-8 flex-wrap">
-                        {results.map((_, i) => {
-                          const isPassed = _.status.id === 3 && 
-                                          !_.stderr && 
-                                          _.stdout?.trim() === testCases[i]?.output.trim();
-                          const isQueued = _.status.id === 1;
-                          const isProcessing = _.status.id === 2;
-                          
-                          let indicatorColor = "bg-destructive";
-                          if (isQueued) indicatorColor = "bg-muted";
-                          else if (isProcessing) indicatorColor = "bg-primary";
-                          else if (isPassed) indicatorColor = "bg-success";
-                          
-                          return (
-                            <TabsTrigger key={i} value={`result-${i}`} className="text-xs relative">
-                              Test case {i+1}
-                              <span className={`absolute top-0 right-0 -mt-1 -mr-1 w-2 h-2 rounded-full ${indicatorColor}`}></span>
-                            </TabsTrigger>
-                          );
-                        })}
-                      </TabsList>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 overflow-x-auto scrollbar-custom">
+                          <TabsList className="h-8 inline-flex">
+                            {results.slice(0, visibleTestCases).map((_, i) => {
+                              const isPassed = _.status.id === 3 && 
+                                              !_.stderr && 
+                                              _.stdout?.trim() === testCases[i]?.output.trim();
+                              const isQueued = _.status.id === 1;
+                              const isProcessing = _.status.id === 2;
+                              
+                              let indicatorColor = "bg-destructive";
+                              if (isQueued) indicatorColor = "bg-muted";
+                              else if (isProcessing) indicatorColor = "bg-primary";
+                              else if (isPassed) indicatorColor = "bg-success";
+                              
+                              return (
+                                <TabsTrigger key={i} value={`result-${i}`} className="text-xs relative whitespace-nowrap">
+                                  Test case {i+1}
+                                  <span className={`absolute top-0 right-0 -mt-1 -mr-1 w-2 h-2 rounded-full ${indicatorColor}`}></span>
+                                </TabsTrigger>
+                              );
+                            })}
+                          </TabsList>
+                        </div>
+                        {results.length > visibleTestCases && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs h-8 flex-shrink-0"
+                            onClick={() => setVisibleTestCases(results.length)}
+                          >
+                            Hiển thị thêm ({results.length - visibleTestCases})
+                          </Button>
+                        )}
+                      </div>
                     </Tabs>
                   </div>
                   

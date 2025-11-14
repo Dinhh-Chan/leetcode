@@ -1,10 +1,10 @@
 import React, { memo } from "react";
 import { ChevronLeft, Award, Sun, Moon, Monitor, User, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { NAV_ITEMS } from "@/constants";
+import { NAV_ITEMS, API_CONFIG } from "@/constants";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Header = memo(() => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuthContext();
   const { theme, setTheme, resolvedTheme } = useThemeContext();
   
@@ -43,7 +44,12 @@ const Header = memo(() => {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card">
       <div className="flex h-14 items-center px-4">
-        <Button variant="ghost" size="icon" className="mr-2">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="mr-2"
+          onClick={() => navigate(-1)}
+        >
           <ChevronLeft className="h-5 w-5" />
         </Button>
 
@@ -77,7 +83,7 @@ const Header = memo(() => {
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
                     <AvatarImage 
-                      src="/default-avatar.png"
+                      src={user?.avatarUrl ? `${API_CONFIG.baseURL}${user.avatarUrl}` : undefined}
                       alt={user?.username}
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
@@ -109,12 +115,7 @@ const Header = memo(() => {
                     <span>Hồ sơ</span>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/settings" className="flex items-center">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Cài đặt</span>
-                  </Link>
-                </DropdownMenuItem>
+        
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="flex items-center">
                   <LogOut className="mr-2 h-4 w-4" />

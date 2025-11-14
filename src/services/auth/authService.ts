@@ -19,11 +19,6 @@ class AuthService {
       username: credentials.username,
       password: credentials.password,
     };
-
-    console.log('Login request payload:', loginRequest);
-    console.log('API endpoint:', API_ENDPOINTS.auth.login);
-
-    // Try direct axios call to debug
     const response = await axios.post<LoginResponse>(
       `${API_CONFIG.baseURL}${API_ENDPOINTS.auth.login}`,
       loginRequest,
@@ -56,7 +51,6 @@ class AuthService {
       await apiService.post(API_ENDPOINTS.auth.logout);
     } catch (error) {
       // Continue with logout even if API call fails
-      console.error('Logout API call failed:', error);
     } finally {
       // Clear tokens and user data
       localStorage.removeItem('auth-token');
@@ -102,7 +96,6 @@ class AuthService {
       try {
         return JSON.parse(userStr);
       } catch (error) {
-        console.error('Error parsing user data:', error);
         return null;
       }
     }

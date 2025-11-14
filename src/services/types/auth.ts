@@ -33,6 +33,7 @@ export interface UserMeResponse {
     systemRole: string;
     studentPtitCode: string | null;
     dataPartitionCode: string | null;
+    avatarUrl?: string | null;
     createdAt: string;
     updatedAt: string;
   };
@@ -50,6 +51,7 @@ export interface User {
   systemRole: string;
   studentPtitCode: string | null;
   dataPartitionCode: string | null;
+  avatarUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 }

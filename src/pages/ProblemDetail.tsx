@@ -19,6 +19,10 @@ const ProblemDetail = () => {
   const [problem, setProblem] = useState<ApiProblem | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userCode, setUserCode] = useState("");
+  const [prevProblemId, setPrevProblemId] = useState<string | null>(null);
+  const [nextProblemId, setNextProblemId] = useState<string | null>(null);
+  const [isNeighborLoading, setIsNeighborLoading] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -38,6 +42,101 @@ const ProblemDetail = () => {
       mounted = false;
     };
   }, [id]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const fetchNeighborProblems = async () => {
+      if (!problem?._id) {
+        if (!isCancelled) {
+          setPrevProblemId(null);
+          setNextProblemId(null);
+        }
+        return;
+      }
+
+      const subTopicId = problem.sub_topic_id || (problem as any)?.sub_topic?._id || (problem as any)?.sub_topic?.sub_topic_id;
+      if (!subTopicId) {
+        if (!isCancelled) {
+          setPrevProblemId(null);
+          setNextProblemId(null);
+        }
+        return;
+      }
+
+      const PAGE_SIZE = 50;
+      let page = 1;
+      let found = false;
+      let previousPageLastId: string | null = null;
+      let nextId: string | null = null;
+      let prevId: string | null = null;
+
+      try {
+        setIsNeighborLoading(true);
+
+        while (!found) {
+          const response = await problemsService.getProblemsBySubTopic(subTopicId, { limit: PAGE_SIZE, page, withTestcases: false });
+          const items = response?.data || [];
+
+          if (!items.length) break;
+
+          const currentIndex = items.findIndex((item) => item._id === problem._id);
+
+          if (currentIndex !== -1) {
+            prevId = currentIndex > 0 ? items[currentIndex - 1]._id : previousPageLastId;
+
+            if (currentIndex < items.length - 1) {
+              nextId = items[currentIndex + 1]._id;
+            } else {
+              if (items.length === PAGE_SIZE) {
+                const nextPageResp = await problemsService.getProblemsBySubTopic(subTopicId, { limit: PAGE_SIZE, page: page + 1, withTestcases: false });
+                const nextItems = nextPageResp?.data || [];
+                nextId = nextItems.length ? nextItems[0]._id : null;
+              } else {
+                nextId = null;
+              }
+            }
+
+            found = true;
+          } else {
+            previousPageLastId = items[items.length - 1]?._id || previousPageLastId;
+
+            if (items.length < PAGE_SIZE) break;
+            page += 1;
+          }
+
+          if (isCancelled) {
+            return;
+          }
+        }
+
+        if (!isCancelled) {
+          setPrevProblemId(prevId || null);
+          setNextProblemId(nextId || null);
+        }
+      } catch (err) {
+        if (!isCancelled) {
+          setPrevProblemId(null);
+          setNextProblemId(null);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsNeighborLoading(false);
+        }
+      }
+    };
+
+    fetchNeighborProblems();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [problem]);
+
+  const handleNavigateProblem = (targetId: string | null | undefined) => {
+    if (!targetId || targetId === problem?._id) return;
+    navigate(`/problems/${targetId}`);
+  };
 
   const mapDifficulty = (d: number): "Dễ" | "Trung bình" | "Khó" => {
     if (d <= 2) return "Dễ";
@@ -78,14 +177,25 @@ const ProblemDetail = () => {
           >
             <ChevronLeft className="h-5 w-5" />
           </Button>
-          <Button variant="ghost" className="gap-2">
+          <Button variant="ghost" className="gap-2" onClick={() => navigate("/problems")}
+          >
             <List className="h-4 w-4" />
             Problem List
           </Button>
-          <Button variant="ghost" size="icon">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => handleNavigateProblem(prevProblemId)}
+            disabled={!prevProblemId || isNeighborLoading}
+          >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => handleNavigateProblem(nextProblemId)}
+            disabled={!nextProblemId || isNeighborLoading}
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
@@ -106,12 +216,6 @@ const ProblemDetail = () => {
                 <TabsTrigger value="description" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
                   Description
                 </TabsTrigger>
-                <TabsTrigger value="editorial" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
-                  Editorial
-                </TabsTrigger>
-                <TabsTrigger value="solutions" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
-                  Solutions
-                </TabsTrigger>
                 <TabsTrigger value="submissions" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
                   Submissions
                 </TabsTrigger>
@@ -127,15 +231,7 @@ const ProblemDetail = () => {
                 {problemData && <ProblemDescription problemData={problemData} />}
               </TabsContent>
 
-              <TabsContent value="editorial" className="m-0 flex-1 overflow-auto p-6">
-                <p className="text-muted-foreground">Editorial content coming soon...</p>
-              </TabsContent>
-
-              <TabsContent value="solutions" className="m-0 flex-1 overflow-auto p-6">
-                <p className="text-muted-foreground">Community solutions coming soon...</p>
-              </TabsContent>
-
-              <TabsContent value="submissions" className="m-0 flex-1 overflow-auto p-6">
+              <TabsContent value="submissions" className="m-0 flex-1 overflow-auto scrollbar-custom p-6">
                 <p className="text-muted-foreground">Your submissions will appear here...</p>
               </TabsContent>
             </Tabs>
@@ -143,7 +239,7 @@ const ProblemDetail = () => {
           <ResizableHandle withHandle className="bg-border" />
           <ResizablePanel defaultSize={35} minSize={20} maxSize={60} className="border-r">
             <CodeEditor
-              initialCode={''}
+              initialCode={problem?.code_template || ''}
               language="python"
               testCases={(problem?.test_cases || []).map((tc: any) => ({
                 input: tc.input_data || '',
@@ -151,11 +247,16 @@ const ProblemDetail = () => {
               }))}
               problemId={problem?._id}
               studentId={user?._id}
+              onCodeChange={setUserCode}
             />
           </ResizablePanel>
           <ResizableHandle withHandle className="bg-border" />
           <ResizablePanel defaultSize={20} minSize={15}>
-            <AiAssistantPanel />
+            <AiAssistantPanel
+              problemDescription={problem?.description || ''}
+              exampleCode={problem?.solution || problem?.code_template || ''}
+              userCode={userCode}
+            />
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>

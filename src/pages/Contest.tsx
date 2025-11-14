@@ -88,7 +88,10 @@ const Contest = () => {
                           );
                         }
                         // Check user status from myContests
-                        const mine = myContests.find((mc: any) => mc.contest?._id === contest._id);
+                        const mine = myContests.find((mc: any) => {
+                          const contestId = mc?.contest?._id || mc?._id;
+                          return contestId === contest._id;
+                        });
                         const myStatus = mine?.status; // 'pending' | 'enrolled'
                         if (myStatus === 'pending') {
                           return (
@@ -141,54 +144,69 @@ const Contest = () => {
                 <p className="text-muted-foreground">Bạn chưa tham gia cuộc thi nào.</p>
               </Card>
             ) : (
-              myContests.map((item, index) => (
-                <Card key={item.contest._id} className="mb-4 cursor-pointer transition-colors hover:bg-muted/50">
-                  <CardContent className="flex items-center justify-between p-4">
-                    <div className="flex items-center gap-4">
-                      <div className={`${index % 2 === 0 ? 'bg-gradient-blue' : 'bg-gradient-green'} flex h-16 w-16 items-center justify-center rounded-lg`}>
-                        <Calendar className="h-8 w-8 text-white" />
-                      </div>
-                      <div>
-                        <div className="mb-2 flex items-center gap-2">
-                          <h4 className="font-semibold">{item.contest.contest_name}</h4>
-                          <Badge variant={item.status === 'enrolled' ? 'default' : 'secondary'}>
-                            {item.status === 'enrolled' ? 'Đã tham gia' : 'Đang chờ duyệt'}
-                          </Badge>
-                          {item.is_manager && (
-                            <Badge variant="outline">Quản lý</Badge>
-                          )}
+              myContests
+                .filter((item: any) => {
+                  // Filter out invalid items - check if item has contest or is contest itself
+                  const contest = item?.contest || item;
+                  return contest?._id;
+                })
+                .map((item: any, index: number) => {
+                  const contest = item.contest || item; // Handle both structures
+                  const contestId = contest._id;
+                  const status = item.status;
+                  const isManager = item.is_manager;
+                  
+                  return (
+                    <Card key={contestId} className="mb-4 cursor-pointer transition-colors hover:bg-muted/50">
+                      <CardContent className="flex items-center justify-between p-4">
+                        <div className="flex items-center gap-4">
+                          <div className={`${index % 2 === 0 ? 'bg-gradient-blue' : 'bg-gradient-green'} flex h-16 w-16 items-center justify-center rounded-lg`}>
+                            <Calendar className="h-8 w-8 text-white" />
+                          </div>
+                          <div>
+                            <div className="mb-2 flex items-center gap-2">
+                              <h4 className="font-semibold">{contest.contest_name}</h4>
+                              {status && (
+                                <Badge variant={status === 'enrolled' ? 'default' : 'secondary'}>
+                                  {status === 'enrolled' ? 'Đã tham gia' : 'Đang chờ duyệt'}
+                                </Badge>
+                              )}
+                              {isManager && (
+                                <Badge variant="outline">Quản lý</Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {contest.description}
+                            </p>
+                            <div className="mt-1 flex gap-4 text-xs text-muted-foreground">
+                              <span>Bắt đầu: {format(new Date(contest.start_time), 'dd/MM/yyyy HH:mm')}</span>
+                              <span>Kết thúc: {format(new Date(contest.end_time), 'dd/MM/yyyy HH:mm')}</span>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {item.contest.description}
-                        </p>
-                        <div className="mt-1 flex gap-4 text-xs text-muted-foreground">
-                          <span>Bắt đầu: {format(new Date(item.contest.start_time), 'dd/MM/yyyy HH:mm')}</span>
-                          <span>Kết thúc: {format(new Date(item.contest.end_time), 'dd/MM/yyyy HH:mm')}</span>
-                        </div>
-                      </div>
-                    </div>
-                    {(() => {
-                      const isEnded = new Date(item.contest.end_time).getTime() <= Date.now();
-                      if (isEnded) {
-                        return (
-                          <Button size="sm" variant="secondary" disabled>
-                            Đã kết thúc
-                          </Button>
-                        );
-                      }
-                      return (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => navigate(`/contest/${item.contest._id}`)}
-                        >
-                          Xem chi tiết
-                        </Button>
-                      );
-                    })()}
-                  </CardContent>
-                </Card>
-              ))
+                        {(() => {
+                          const isEnded = new Date(contest.end_time).getTime() <= Date.now();
+                          if (isEnded) {
+                            return (
+                              <Button size="sm" variant="secondary" disabled>
+                                Đã kết thúc
+                              </Button>
+                            );
+                          }
+                          return (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => navigate(`/contest/${contestId}`)}
+                            >
+                              Xem chi tiết
+                            </Button>
+                          );
+                        })()}
+                      </CardContent>
+                    </Card>
+                  );
+                })
             )}
           </TabsContent>
         </Tabs>

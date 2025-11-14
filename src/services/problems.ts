@@ -1,6 +1,5 @@
-import { apiService } from './api';
+import { apiService, apiClient } from './api';
 import { API_ENDPOINTS, API_CONFIG } from '@/constants';
-import axios from 'axios';
 import { Problem, ProblemsListApiResponse, ProblemsListResponse, SubmissionResponse } from './types/problems';
 import { FilterOptions, CodeSubmission, Submission } from '@/types';
 
@@ -14,15 +13,35 @@ class ProblemsService {
   async getProblems(
     page: number = 1,
     limit: number = 20,
-    filters?: FilterOptions
+    filters?: FilterOptions,
+    condition?: any,
+    sort?: string,
+    order?: 'asc' | 'desc'
   ): Promise<ProblemsListResponse> {
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
     });
 
+    // Always use /problems/many endpoint
+    const endpoint = API_ENDPOINTS.problems.many;
+
+    // Add condition parameter if exists
+    if (condition && Object.keys(condition).length > 0) {
+      params.append('condition', JSON.stringify(condition));
+    }
+
+    // Add sort and order
+    if (sort) {
+      params.append('sort', sort);
+    }
+    if (order) {
+      params.append('order', order);
+    }
+
+    // Legacy filters support (for backward compatibility)
     if (filters) {
-      if (filters.difficulty?.length) {
+      if (filters.difficulty?.length && !condition?.difficulty) {
         params.append('difficulty', filters.difficulty.join(','));
       }
       if (filters.tags?.length) {
@@ -31,44 +50,58 @@ class ProblemsService {
       if (filters.status?.length) {
         params.append('status', filters.status.join(','));
       }
-      if (filters.sortBy) {
+      if (filters.sortBy && !sort) {
         params.append('sortBy', filters.sortBy);
       }
-      if (filters.sortOrder) {
+      if (filters.sortOrder && !order) {
         params.append('sortOrder', filters.sortOrder);
       }
     }
 
     const token = this.getToken();
-    const response = await axios.get<ProblemsListApiResponse>(
-      `${API_CONFIG.baseURL}${API_ENDPOINTS.problems.list}?${params.toString()}`,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-      }
+    const res = await apiClient.get(`${endpoint}?${params.toString()}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    });
+
+    const payload: any = res?.data ?? {};
+    const dataLayer = payload?.data ?? payload ?? {};
+    const resultArray = Array.isArray(dataLayer?.result)
+      ? dataLayer.result
+      : Array.isArray(dataLayer?.data)
+        ? dataLayer.data
+        : Array.isArray(payload?.result)
+          ? payload.result
+          : Array.isArray(payload?.data)
+            ? payload.data
+            : [];
+
+    const pageVal = Number(dataLayer.page ?? payload.page ?? 1);
+    const limitVal = Number(dataLayer.limit ?? payload.limit ?? limit);
+    const totalVal = Number(dataLayer.total ?? payload.total ?? resultArray.length ?? 0);
+    const totalPagesVal = Number(
+      dataLayer.totalPages ?? payload.totalPages ?? Math.max(1, Math.ceil((totalVal || resultArray.length || 0) / (limitVal || 1)))
     );
 
-    // Transform API response to match expected format
-    const apiResponse = response.data;
     return {
-      success: apiResponse.success,
-      data: apiResponse.data.result,
+      success: typeof payload?.success === 'boolean' ? payload.success : true,
+      data: resultArray as Problem[],
       pagination: {
-        page: apiResponse.data.page,
-        limit: apiResponse.data.limit,
-        total: apiResponse.data.total,
-        totalPages: Math.ceil(apiResponse.data.total / apiResponse.data.limit),
+        page: pageVal,
+        limit: limitVal,
+        total: totalVal,
+        totalPages: totalPagesVal,
       },
-    } as ProblemsListResponse;
+    };
   }
 
   // Get problem by ID (string id supported)
   async getProblem(id: string): Promise<Problem> {
     const token = this.getToken();
-    const response = await axios.get<{ data: Problem; success: boolean }>(
-      `${API_CONFIG.baseURL}/problems/${id}`,
+    const response = await apiService.get<Problem>(
+      `${API_ENDPOINTS.problems.detail(id)}`,
       {
         headers: {
           'Content-Type': 'application/json',
@@ -76,7 +109,22 @@ class ProblemsService {
         },
       }
     );
-    return response.data.data as unknown as Problem;
+    return response;
+  }
+
+  // Get course problem by course ID and problem ID
+  async getCourseProblem(courseId: string, problemId: string): Promise<Problem> {
+    const token = this.getToken();
+    const response = await apiService.get<Problem>(
+      `/courses/${courseId}/problems/${problemId}`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      }
+    );
+    return response;
   }
 
   // Get problem by slug
@@ -174,20 +222,49 @@ class ProblemsService {
   }
 
   // Search problems
-  async searchProblems(
-    query: string,
-    page: number = 1,
-    limit: number = 20
-  ): Promise<ProblemsListResponse> {
-    const params = new URLSearchParams({
-      q: query,
-      page: page.toString(),
-      limit: limit.toString(),
-    });
+  async searchProblems(params: {
+    name: string;
+    page?: number;
+    limit?: number;
+    difficulty?: number;
+  }): Promise<ProblemsListResponse> {
+    const searchParams = new URLSearchParams();
+    searchParams.set('name', params.name);
+    if (params.page) searchParams.set('page', params.page.toString());
+    if (params.limit) searchParams.set('limit', params.limit.toString());
+    if (params.difficulty) searchParams.set('difficulty', params.difficulty.toString());
 
-    return apiService.get<ProblemsListResponse>(
-      `/problems/search?${params.toString()}`
+    const url = `${API_ENDPOINTS.problems.search}?${searchParams.toString()}`;
+    const res = await apiClient.get(url);
+    const payload: any = res?.data ?? {};
+    const dataLayer = payload?.data ?? payload ?? {};
+
+    const extractArray = (source: any): Problem[] => {
+      if (Array.isArray(source?.result)) return source.result as Problem[];
+      if (Array.isArray(source?.data)) return source.data as Problem[];
+      if (Array.isArray(source)) return source as Problem[];
+      return [];
+    };
+
+    const items = extractArray(dataLayer);
+    const pageVal = Number(dataLayer.page ?? payload.page ?? params.page ?? 1);
+    const derivedLimit = dataLayer.limit ?? payload.limit ?? params.limit ?? (items.length ? items.length : undefined) ?? 20;
+    const limitVal = Number(derivedLimit);
+    const totalVal = Number(dataLayer.total ?? payload.total ?? items.length ?? 0);
+    const totalPagesVal = Number(
+      dataLayer.totalPages ?? payload.totalPages ?? Math.max(1, Math.ceil((totalVal || items.length || 0) / (limitVal || 1)))
     );
+
+    return {
+      success: typeof payload?.success === 'boolean' ? payload.success : true,
+      data: items,
+      pagination: {
+        page: pageVal,
+        limit: limitVal,
+        total: totalVal,
+        totalPages: totalPagesVal,
+      },
+    };
   }
 
   // Get trending problems
@@ -221,7 +298,7 @@ class ProblemsService {
     );
   }
 
-  // Get problems by sub-topic with filters and pagination
+  // Get sub-topic problems with optional filters
   async getProblemsBySubTopic(
     subTopicId: string,
     options: {
@@ -231,6 +308,7 @@ class ProblemsService {
       difficulty?: string; // e.g. "1,2,3"
       solved?: string; // "1" | "0"
       sort?: string; // JSON string, e.g. '{"difficulty":1}'
+      withTestcases?: boolean;
     } = {}
   ): Promise<ProblemsListResponse> {
     const params = new URLSearchParams();
@@ -241,34 +319,135 @@ class ProblemsService {
     if (options.solved !== undefined) params.set('solved', options.solved);
     if (options.sort) params.set('sort', options.sort);
 
-    // Expect API returns shape similar to basic list; fallback if not
-    const url = `${API_ENDPOINTS.problems.bySubTopic(subTopicId)}${params.toString() ? `?${params.toString()}` : ''}`;
+    const withTestcases = options.withTestcases ?? true;
+    const basePath = withTestcases
+      ? API_ENDPOINTS.problems.bySubTopic(subTopicId)
+      : API_ENDPOINTS.problems.bySubTopicWithoutTestcases(subTopicId);
+
+    const url = `${basePath}${params.toString() ? `?${params.toString()}` : ''}`;
+
     try {
-      const res = await axios.get<ProblemsListApiResponse>(`${API_CONFIG.baseURL}${url}`);
-      const api = res.data;
+      const res = await apiClient.get(url);
+      const payload: any = res?.data ?? {};
+
+      let items: Problem[] = [];
+      let page = Number(options.page || 1);
+      let limit = Number(options.limit || 20);
+      let total = 0;
+      let totalPages = 1;
+
+      const extractArray = (source: any): Problem[] => {
+        if (Array.isArray(source)) return source as Problem[];
+        if (source && typeof source === 'object') {
+          if (Array.isArray(source.result)) return source.result as Problem[];
+          if (Array.isArray(source.items)) return source.items as Problem[];
+          if (Array.isArray(source.data)) return source.data as Problem[];
+        }
+        return [];
+      };
+
+      if (payload?.data) {
+        items = extractArray(payload.data);
+        const meta = payload.meta ?? payload.data?.meta ?? {};
+        page = Number(meta.page ?? payload.data.page ?? page);
+        limit = Number(meta.limit ?? payload.data.limit ?? limit);
+        total = Number(meta.total ?? payload.data.total ?? items.length ?? 0);
+        totalPages = Number(meta.totalPages ?? payload.data.totalPages ?? Math.max(1, Math.ceil((total || items.length || 0) / (limit || 1))));
+      } else {
+        items = extractArray(payload);
+        page = Number(payload.page ?? page);
+        limit = Number(payload.limit ?? limit);
+        total = Number(payload.total ?? items.length ?? 0);
+        totalPages = Number(payload.totalPages ?? Math.max(1, Math.ceil((total || items.length || 0) / (limit || 1))));
+      }
+
       return {
-        success: api.success,
-        data: api.data.result,
+        success: typeof payload?.success === 'boolean' ? payload.success : true,
+        data: items,
         pagination: {
-          page: api.data.page,
-          limit: api.data.limit,
-          total: api.data.total,
-          totalPages: Math.ceil(api.data.total / api.data.limit),
+          page,
+          limit,
+          total,
+          totalPages,
         },
       };
-    } catch {
-      // Fallback for API returning {success, data: Problem[]}
-      const data = await apiService.get<{ success: boolean; data: Problem[] }>(url);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Get topic problems with optional filters
+  async getProblemsByTopic(
+    topicId: string,
+    options: {
+      page?: number;
+      limit?: number;
+      difficulty?: string; // e.g. "1,2,3"
+      is_public?: boolean;
+      sort?: string; // e.g. "difficulty"
+      order?: 'asc' | 'desc';
+    } = {}
+  ): Promise<ProblemsListResponse> {
+    const params = new URLSearchParams();
+    if (options.page) params.set('page', String(options.page));
+    if (options.limit) params.set('limit', String(options.limit));
+    if (options.difficulty) params.set('difficulty', options.difficulty);
+    if (options.is_public !== undefined) params.set('is_public', String(options.is_public));
+    if (options.sort) params.set('sort', options.sort);
+    if (options.order) params.set('order', options.order);
+
+    const url = `${API_ENDPOINTS.problems.byTopic(topicId)}${params.toString() ? `?${params.toString()}` : ''}`;
+
+    try {
+      const res = await apiClient.get(url);
+      const payload: any = res?.data ?? {};
+
+      let items: Problem[] = [];
+      let page = Number(options.page || 1);
+      let limit = Number(options.limit || 20);
+      let total = 0;
+      let totalPages = 1;
+      let problemsCount = 0;
+
+      const extractArray = (source: any): Problem[] => {
+        if (Array.isArray(source)) return source as Problem[];
+        if (source && typeof source === 'object') {
+          if (Array.isArray(source.result)) return source.result as Problem[];
+          if (Array.isArray(source.items)) return source.items as Problem[];
+          if (Array.isArray(source.data)) return source.data as Problem[];
+        }
+        return [];
+      };
+
+      if (payload?.data) {
+        items = extractArray(payload.data);
+        const meta = payload.meta ?? payload.data?.meta ?? {};
+        page = Number(meta.page ?? payload.data.page ?? page);
+        limit = Number(meta.limit ?? payload.data.limit ?? limit);
+        total = Number(meta.total ?? payload.data.total ?? items.length ?? 0);
+        problemsCount = Number(meta.problems_count ?? payload.data.problems_count ?? total);
+        totalPages = Number(meta.totalPages ?? payload.data.totalPages ?? Math.max(1, Math.ceil((total || items.length || 0) / (limit || 1))));
+      } else {
+        items = extractArray(payload.result || payload);
+        page = Number(payload.page ?? page);
+        limit = Number(payload.limit ?? limit);
+        total = Number(payload.total ?? items.length ?? 0);
+        problemsCount = Number(payload.problems_count ?? total);
+        totalPages = Number(payload.totalPages ?? Math.max(1, Math.ceil((total || items.length || 0) / (limit || 1))));
+      }
+
       return {
-        success: true,
-        data: (data as any).data || (data as any),
+        success: typeof payload?.success === 'boolean' ? payload.success : true,
+        data: items,
         pagination: {
-          page: Number(options.page || 1),
-          limit: Number(options.limit || 20),
-          total: ((data as any).data || (data as any))?.length || 0,
-          totalPages: 1,
+          page,
+          limit,
+          total: problemsCount || total,
+          totalPages,
         },
-      } as ProblemsListResponse;
+      };
+    } catch (error) {
+      throw error;
     }
   }
 }

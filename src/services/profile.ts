@@ -24,6 +24,11 @@ export interface DifficultyStats {
   total: number;
 }
 
+export interface ActivityData {
+  date: string; // Format: "YYYY-MM-DD"
+  count: number;
+}
+
 export interface UserProfileResponse {
   success: boolean;
   data: {
@@ -36,6 +41,7 @@ export interface UserProfileResponse {
     languages: ProfileLanguage[];
     recent_ac: ProfileRecentAC[];
     skills: ProfileSkill[];
+    activity_data: ActivityData[];
   };
 }
 

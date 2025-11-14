@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 // import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ThumbsUp, ThumbsDown, MessageSquare, Eye, Lightbulb } from "lucide-react";
-import KMark from "@/components/KMark";
+import { MarkdownKatexRenderer } from "@/components/MarkdownKatexRenderer";
 
 interface ProblemDescriptionProps {
   problemData: {
@@ -42,7 +42,7 @@ const ProblemDescription = ({ problemData }: ProblemDescriptionProps) => {
   };
 
   return (
-    <div className="h-full overflow-auto p-6">
+    <div className="h-full overflow-auto scrollbar-custom p-6">
       <div className="mb-6">
         <h1 className="mb-4 text-2xl font-bold">
           {problemData.id}. {problemData.title}
@@ -86,7 +86,7 @@ const ProblemDescription = ({ problemData }: ProblemDescriptionProps) => {
       </div>
 
       <div className="prose prose-sm max-w-none">
-        <KMark content={problemData.description} />
+        <MarkdownKatexRenderer content={problemData.description} />
 
         {/* Testcases moved to CodeEditor bottom panel */}
 

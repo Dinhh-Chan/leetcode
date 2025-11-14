@@ -43,10 +43,7 @@ apiClient.interceptors.request.use(
 // Response interceptor for error handling
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
-    // Calculate request duration
-    const endTime = new Date();
-    const duration = endTime.getTime() - (response.config.metadata?.startTime?.getTime() || 0);
-    console.log(`API Request to ${response.config.url} took ${duration}ms`);
+    // Response interceptor
     
     return response;
   },

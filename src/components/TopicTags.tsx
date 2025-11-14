@@ -28,7 +28,7 @@ const TopicTags = () => {
             variant="secondary"
             className="cursor-pointer hover:bg-secondary/80"
             title={item.description || item.sub_topic_name}
-            onClick={() => navigate(`/problems/by-sub-topic/${item._id}?page=1&limit=20`)}
+            onClick={() => navigate(`/problems/by-sub-topic/${item._id}/without-testcases?page=1&limit=20`)}
           >
             {item.sub_topic_name?.trim() || "Unnamed"}
           </Badge>

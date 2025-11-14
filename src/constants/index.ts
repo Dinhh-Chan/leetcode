@@ -27,15 +27,21 @@ export const API_ENDPOINTS = {
   },
   // Problems
   problems: {
-    list: '/problems/list/basic',
-    detail: (id: number) => `/problems/${id}`,
-    submit: '/problems/submit',
+    list: `${API_CONFIG.baseURL}/problems`,
+    many: `${API_CONFIG.baseURL}/problems/many`,
+    detail: (id: string | number) => `/problems/${id}`,
+    submit: '/submissions/submit',
+    search: '/problems/search',
     submissions: (problemId: number) => `/problems/${problemId}/submissions`,
     bySubTopic: (subTopicId: string) => `/problems/by-sub-topic/${subTopicId}`,
+    bySubTopicWithoutTestcases: (subTopicId: string) => `/problems/by-sub-topic/${subTopicId}/without-testcases`,
+    byTopic: (topicId: string) => `/problems/by-topic/${topicId}`,
   },
   // Courses
   courses: {
     active: '/courses/active',
+    detail: (id: string) => `/courses/${id}`,
+    join: '/course-students',
   },
   // Contests
   contests: {
@@ -59,6 +65,9 @@ export const API_ENDPOINTS = {
   // Sub-Topics
   subTopics: {
     many: '/sub-topics/many',
+  },
+  topics: {
+    many: '/topics/many',
   },
   // Users
   users: {
@@ -209,4 +218,5 @@ export const NAV_ITEMS = [
   { label: 'Khám phá', path: '/', exact: true },
   { label: 'Bài tập', path: '/problems' },
   { label: 'Cuộc thi', path: '/contest' },
+  { label: 'Bảng xếp hạng', path: '/ranking' },
 ] as const;

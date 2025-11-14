@@ -4,6 +4,7 @@ import { useCourses } from "@/hooks/useCourses";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 const GRADIENT_CLASSES = [
   "bg-gradient-to-br from-orange-500 to-orange-700",
@@ -18,6 +19,7 @@ const GRADIENT_CLASSES = [
 
 const BannerCards = () => {
   const { courses, isLoading } = useCourses();
+  const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const cardsPerView = 4;
@@ -96,14 +98,12 @@ const BannerCards = () => {
                   {course.course_code}
                 </span>
                 <h3 className="mb-1 text-lg font-bold line-clamp-2">{course.course_name}</h3>
-                {course.description && (
-                  <p className="mb-3 text-xs opacity-80 line-clamp-2 flex-1">{course.description}</p>
-                )}
                 <div className="mt-auto">
                   <Button
                     size="sm"
                     variant="secondary"
                     className="bg-white text-gray-900 hover:bg-white/90 dark:bg-white dark:text-gray-900 dark:hover:bg-white/90 w-full font-semibold"
+                    onClick={() => navigate(`/courses/${course._id}`)}
                   >
                     Bắt đầu học
                   </Button>

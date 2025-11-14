@@ -3,45 +3,36 @@ import { useSearchParams, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { problemsService } from '@/services';
 import { ProblemsListResponse } from '@/services/types/problems';
+import { useAuthContext } from '@/contexts/AuthContext';
 
-export const useProblemsBySubTopic = () => {
-  const { subTopicId } = useParams();
+export const useProblemsByTopic = () => {
+  const { topicId } = useParams();
   const [params, setParams] = useSearchParams();
+  const { user } = useAuthContext();
 
   const page = Number(params.get('page') || 1);
   const limit = Number(params.get('limit') || 20);
-  const q = params.get('q') || '';
   const difficulty = params.get('difficulty') || '';
-  const solved = params.get('solved') || '';
   const sort = params.get('sort') || '';
+  const order = (params.get('order') || 'asc') as 'asc' | 'desc';
+
+  // Auto filter is_public = true if user is STUDENT
+  const isPublic = user?.systemRole === 'Student' ? true : undefined;
 
   const query = useQuery({
-    queryKey: ['problems-by-subtopic', subTopicId, page, limit, q, difficulty, solved, sort],
-    queryFn: () => problemsService.getProblemsBySubTopic(subTopicId as string, {
+    queryKey: ['problems-by-topic', topicId, page, limit, difficulty, sort, order, isPublic],
+    queryFn: () => problemsService.getProblemsByTopic(topicId as string, {
       page,
       limit,
-      q: q || undefined,
       difficulty: difficulty || undefined,
-      solved: solved || undefined,
+      is_public: isPublic,
       sort: sort || undefined,
-      withTestcases: false,
+      order: order || undefined,
     }),
-    enabled: !!subTopicId,
+    enabled: !!topicId,
     staleTime: 2 * 60 * 1000,
     placeholderData: (prev) => prev,
     retry: 1,
-  });
-
-  const solvedQuery = useQuery({
-    queryKey: ['problems-by-subtopic-solved-count', subTopicId],
-    queryFn: () => problemsService.getProblemsBySubTopic(subTopicId as string, {
-      page: 1,
-      limit: 200,
-      solved: '1',
-      withTestcases: false,
-    }),
-    enabled: !!subTopicId,
-    staleTime: 5 * 60 * 1000,
   });
 
   const updateParam = (key: string, value?: string) => {
@@ -56,31 +47,28 @@ export const useProblemsBySubTopic = () => {
   const progress = useMemo(() => {
     const resp = query.data as unknown as ProblemsListResponse | undefined;
     const total = resp?.pagination?.total || resp?.data?.length || 0;
-    const solvedItems = (solvedQuery.data as ProblemsListResponse | undefined)?.data ?? [];
-    const solvedCount = solvedItems.filter((item) => item.is_done && (!subTopicId || item.sub_topic_id === subTopicId)).length;
+    const solvedItems = resp?.data?.filter((item) => item.is_done) ?? [];
+    const solvedCount = solvedItems.length;
     const percent = total ? Math.round((solvedCount / total) * 100) : 0;
     return { solvedCount, total, percent };
-  }, [query.data, solvedQuery.data, subTopicId]);
+  }, [query.data]);
 
   return {
-    subTopicId,
+    topicId,
     data: (query.data as any)?.data || [],
     pagination: (query.data as any)?.pagination,
     isLoading: query.isLoading,
     isFetching: query.isFetching,
     error: query.error,
     refetch: query.refetch,
-    solvedProgressLoading: solvedQuery.isLoading || solvedQuery.isFetching,
     // state
     page,
     limit,
-    q,
     difficulty,
-    solved,
     sort,
+    order,
     updateParam,
     progress,
   };
 };
-
 

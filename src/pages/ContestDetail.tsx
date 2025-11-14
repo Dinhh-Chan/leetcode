@@ -48,10 +48,6 @@ const ContestDetail = () => {
       const response = await contestsService.getContestRanking(contestIdParam);
       const rankingData = response.data?.ranking || [];
       setRanking(rankingData);
-      // Debug: log first ranking item to check score
-      if (rankingData.length > 0) {
-        console.log("First ranking item:", rankingData[0]);
-      }
     } catch (e: any) {
       console.error("Error loading ranking:", e);
       setRanking([]);

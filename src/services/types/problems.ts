@@ -66,6 +66,7 @@ export interface FilterOptions {
   status?: string[];
   sortBy?: 'acceptance' | 'difficulty' | 'title';
   sortOrder?: 'asc' | 'desc';
+  name?: string;
 }
 
 export interface CodeSubmission {

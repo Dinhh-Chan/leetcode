@@ -66,8 +66,19 @@ export const useContests = () => {
     isLoadingContests,
     contestsError,
     
-    // My contests
-    myContests: Array.isArray(myContestsData?.data?.result) ? myContestsData.data.result : [],
+    // My contests - handle both { data: { result: [...] } } and { data: [...] } structures
+    myContests: (() => {
+      if (!myContestsData?.data) return [];
+      // Check if data is array directly
+      if (Array.isArray(myContestsData.data)) {
+        return myContestsData.data;
+      }
+      // Check if data has result property
+      if (Array.isArray(myContestsData.data.result)) {
+        return myContestsData.data.result;
+      }
+      return [];
+    })(),
     isLoadingMyContests,
     myContestsError,
     

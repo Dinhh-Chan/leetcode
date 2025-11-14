@@ -3,13 +3,12 @@ import LeftSidebar from "@/components/LeftSidebar";
 import RightSidebar from "@/components/RightSidebar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { useProblemsBySubTopic } from "@/hooks/useProblemsBySubTopic";
+import { Link, useLocation, useParams } from "react-router-dom";
+import { useProblemsByTopic } from "@/hooks/useProblemsByTopic";
 import { DIFFICULTY_COLORS } from "@/constants";
 import { Check, Clock, Users } from "lucide-react";
-import { useMemo, useEffect } from "react";
+import { useMemo } from "react";
 
 const DIFFICULTY_LABEL = (d: number): 'Dễ' | 'Trung bình' | 'Khó' => {
   if (d <= 2) return 'Dễ';
@@ -36,47 +35,42 @@ const DifficultyTabs = ({ value, onChange }: { value: string; onChange: (val: st
 };
 
 const Toolbar = () => {
-  const { q, difficulty, solved, sort, updateParam } = useProblemsBySubTopic();
+  const { difficulty, sort, order, updateParam } = useProblemsByTopic();
   return (
     <div className="mb-4 flex flex-wrap items-center gap-2">
-      <Input
-        placeholder="Search problems..."
-        className="w-64"
-        defaultValue={q}
-        onChange={(e) => {
-          const value = e.currentTarget.value;
-          // simple debounce via timeout per keystroke isn't ideal; acceptable lightweight
-          const timer = (e.currentTarget as any)._t as number | undefined;
-          if (timer) clearTimeout(timer);
-          (e.currentTarget as any)._t = window.setTimeout(() => updateParam('q', value || undefined), 300);
-        }}
-      />
       <DifficultyTabs value={difficulty} onChange={(val) => updateParam('difficulty', val || undefined)} />
-      <Button variant={solved==='1' ? 'default' : 'outline'} size="sm" onClick={() => updateParam('solved', solved==='1' ? undefined : '1')}>
-        Solved
-      </Button>
       <select
         className="h-9 rounded-md border px-2 text-sm"
         value={sort || ''}
         onChange={(e) => updateParam('sort', e.target.value || undefined)}
       >
-        <option value=''>Sort</option>
-        <option value='{"difficulty":1}'>Difficulty ↑</option>
-        <option value='{"difficulty":-1}'>Difficulty ↓</option>
-        <option value='{"updatedAt":-1}'>Updated (newest)</option>
+        <option value=''>Sắp xếp</option>
+        <option value='difficulty'>Độ khó</option>
+        <option value='name'>Tên</option>
+        <option value='createdAt'>Ngày tạo</option>
       </select>
+      {sort && (
+        <select
+          className="h-9 rounded-md border px-2 text-sm"
+          value={order || 'asc'}
+          onChange={(e) => updateParam('order', e.target.value as 'asc' | 'desc')}
+        >
+          <option value='asc'>Tăng dần</option>
+          <option value='desc'>Giảm dần</option>
+        </select>
+      )}
     </div>
   );
 };
 
 const ProgressCard = () => {
-  const { progress } = useProblemsBySubTopic();
+  const { progress } = useProblemsByTopic();
   return (
     <div className="rounded-lg border p-4 mb-4">
-      <div className="text-sm text-muted-foreground">Progress</div>
+      <div className="text-sm text-muted-foreground">Tiến độ</div>
       <div className="mt-2 flex items-center gap-4">
         <div className="text-2xl font-semibold">{progress.solvedCount}</div>
-        <div className="text-sm">/ {progress.total} solved</div>
+        <div className="text-sm">/ {progress.total} đã giải</div>
         <div className="ml-auto text-sm text-muted-foreground">{progress.percent}%</div>
       </div>
     </div>
@@ -84,7 +78,7 @@ const ProgressCard = () => {
 };
 
 const ProblemsList = () => {
-  const { data, isLoading, isFetching, pagination } = useProblemsBySubTopic();
+  const { data, isLoading, isFetching, pagination } = useProblemsByTopic();
   const location = useLocation();
   const items = data;
   const isBackgroundLoading = isFetching && !isLoading;
@@ -108,7 +102,7 @@ const ProblemsList = () => {
   if (!items?.length) {
     return (
       <div className="rounded-lg border bg-card p-8 text-center text-muted-foreground">
-        Chưa có bài nào trong subtopic này.
+        Chưa có bài nào trong topic này.
       </div>
     );
   }
@@ -155,12 +149,12 @@ const ProblemsList = () => {
 };
 
 const PaginationBar = () => {
-  const { pagination, updateParam, page, limit } = useProblemsBySubTopic();
+  const { pagination, updateParam, page, limit } = useProblemsByTopic();
   if (!pagination) return null;
   return (
     <div className="mt-3 flex items-center justify-between">
       <p className="text-sm text-muted-foreground">
-        Showing {((page - 1) * pagination.limit) + 1} to {Math.min(page * pagination.limit, pagination.total)} of {pagination.total} results
+        Hiển thị {((page - 1) * pagination.limit) + 1} đến {Math.min(page * pagination.limit, pagination.total)} trong tổng số {pagination.total} kết quả
       </p>
       <div className="flex items-center gap-2">
         <select
@@ -172,32 +166,23 @@ const PaginationBar = () => {
           <option value="20">20</option>
           <option value="50">50</option>
         </select>
-        <Button variant="outline" size="sm" onClick={() => updateParam('page', String(page - 1))} disabled={page === 1}>Previous</Button>
-        <span className="text-sm">Page {page} of {pagination.totalPages}</span>
-        <Button variant="outline" size="sm" onClick={() => updateParam('page', String(page + 1))} disabled={page === pagination.totalPages}>Next</Button>
+        <Button variant="outline" size="sm" onClick={() => updateParam('page', String(page - 1))} disabled={page === 1}>Trước</Button>
+        <span className="text-sm">Trang {page} / {pagination.totalPages}</span>
+        <Button variant="outline" size="sm" onClick={() => updateParam('page', String(page + 1))} disabled={page === pagination.totalPages}>Sau</Button>
       </div>
     </div>
   );
 };
 
-const ProblemsBySubTopic = () => {
-  const { subTopicId } = useParams();
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { data, isLoading, pagination } = useProblemsBySubTopic();
+const ProblemsByTopic = () => {
+  const { topicId } = useParams();
+  const { data, isLoading, pagination } = useProblemsByTopic();
 
-  useEffect(() => {
-    if (!subTopicId) return;
-    if (!location.pathname.includes('/without-testcases')) {
-      navigate(`/problems/by-sub-topic/${subTopicId}/without-testcases${location.search || ''}`, { replace: true });
-    }
-  }, [subTopicId, location.pathname, location.search, navigate]);
-
-  // Title uses subtopic name from first item if available
+  // Title uses topic name from first item if available
   const title = useMemo(() => {
-    const first = data?.[0]?.sub_topic?.sub_topic_name || 'Subtopic';
+    const first = data?.[0]?.topic?.topic_name || data?.[0]?.topic?.name || 'Topic';
     const total = pagination?.total || data.length || 0;
-    return `${first} — ${total} problems`;
+    return `${first} — ${total} bài tập`;
   }, [data, pagination]);
 
   return (
@@ -224,15 +209,5 @@ const ProblemsBySubTopic = () => {
   );
 };
 
-export default ProblemsBySubTopic;
-
-
-
-
-
-
-
-
-
-
+export default ProblemsByTopic;
 
