@@ -11,6 +11,7 @@ import { profileService } from "@/services/profile";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { API_CONFIG } from "@/constants";
 
 const Profile = () => {
   const { user } = useAuthContext();
@@ -207,10 +208,14 @@ const Profile = () => {
             <Card>
               <CardContent className="p-6 text-center">
                 <Avatar className="mx-auto mb-4 h-24 w-24">
-                  <AvatarImage src="/default-avatar.png" onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.fullname || profile.username)}&background=21791f&color=fff&size=128`;
-                  }} />
+                  <AvatarImage 
+                    src={user?.avatarUrl ? `${API_CONFIG.baseURL}${user.avatarUrl}` : undefined}
+                    alt={profile.fullname || profile.username}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.fullname || profile.username)}&background=21791f&color=fff&size=128`;
+                    }} 
+                  />
                   <AvatarFallback>{getInitials(profile.fullname)}</AvatarFallback>
                 </Avatar>
                 <h2 className="mb-1 text-xl font-bold">{profile.fullname}</h2>

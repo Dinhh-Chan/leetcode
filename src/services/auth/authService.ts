@@ -72,7 +72,10 @@ class AuthService {
         },
       }
     );
-    return response.data.data;
+    const user = response.data.data;
+    // Update cached user in localStorage
+    localStorage.setItem('user', JSON.stringify(user));
+    return user;
   }
 
   // Check if user is authenticated

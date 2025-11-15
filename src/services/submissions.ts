@@ -46,6 +46,7 @@ export interface RankingUser {
   email: string;
   fullName: string;
   systemRole: string;
+  avatarUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 }

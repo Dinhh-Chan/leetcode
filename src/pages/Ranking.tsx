@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { submissionsService } from "@/services/submissions";
 import { useQuery } from "@tanstack/react-query";
+import { API_CONFIG } from "@/constants";
 
 const Ranking = () => {
   const { data: rankingData, isLoading, error } = useQuery({
@@ -104,7 +105,7 @@ const Ranking = () => {
                           <div className="flex items-center gap-4">
                             <Avatar className="h-10 w-10">
                               <AvatarImage
-                                src="/default-avatar.png"
+                                src={item.user.avatarUrl ? `${API_CONFIG.baseURL}${item.user.avatarUrl}` : undefined}
                                 alt={item.user.fullName || item.user.username}
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement;

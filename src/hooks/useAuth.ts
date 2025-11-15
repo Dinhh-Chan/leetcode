@@ -14,7 +14,9 @@ export const useAuth = () => {
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Get current user query - enable based on token presence
+  // Initialize with cached user from localStorage if available
   const [isAuth, setIsAuth] = useState(() => authService.isAuthenticated());
+  const cachedUser = authService.getCurrentUser();
   const {
     data: user,
     isLoading: isLoadingUser,
@@ -26,6 +28,7 @@ export const useAuth = () => {
     enabled: isAuth,
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    initialData: cachedUser || undefined, // Use cached user as initial data
   });
 
   // If query fails with 401, token is invalid - update isAuth
@@ -105,8 +108,14 @@ export const useAuth = () => {
             try {
               await authService.refreshToken();
               setIsAuth(true);
-              // Thông báo refresh token thành công
-              toast.success('Phiên đăng nhập đã được gia hạn tự động');
+              // Update cached user after refresh
+              try {
+                const refreshedUser = await authService.getProfile();
+                localStorage.setItem('user', JSON.stringify(refreshedUser));
+                queryClient.setQueryData(['auth', 'user'], refreshedUser);
+              } catch (err) {
+                console.error('Failed to fetch user after refresh:', err);
+              }
             } catch (error: any) {
               // Refresh failed, logout user
               console.error('Token refresh failed:', error);
@@ -118,6 +127,10 @@ export const useAuth = () => {
           } else {
             // Token is still valid, ensure isAuth is true
             setIsAuth(true);
+            // If we have cached user but no query data, set it
+            if (cachedUser && !user) {
+              queryClient.setQueryData(['auth', 'user'], cachedUser);
+            }
           }
         } else {
           // No valid token, ensure isAuth is false
@@ -132,7 +145,7 @@ export const useAuth = () => {
     };
 
     initializeAuth();
-  }, [queryClient]);
+  }, [queryClient, cachedUser, user]);
 
   // Login function
   const login = useCallback(
