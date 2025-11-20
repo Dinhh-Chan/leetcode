@@ -68,6 +68,50 @@ class CoursesService {
 
     return response.data;
   }
+
+  // Generate AI course
+  async generateAICourse(learningGoal: string, additionalNotes?: string): Promise<{ success: boolean; data: any }> {
+    const token = this.getToken();
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+
+    const response = await axios.post<{ success: boolean; data: any }>(
+      `${API_CONFIG.baseURL}/courses/generate-ai-course`,
+      {
+        learning_goal: learningGoal,
+        ...(additionalNotes && { additional_notes: additionalNotes }),
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  }
+
+  // Delete course
+  async deleteCourse(courseId: string): Promise<{ success: boolean; message?: string }> {
+    const token = this.getToken();
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+
+    const response = await axios.delete<{ success: boolean; message?: string }>(
+      `${API_CONFIG.baseURL}${API_ENDPOINTS.courses.detail(courseId)}`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  }
 }
 
 // Create singleton instance

@@ -47,7 +47,7 @@ const ProblemDescription = ({ problemData }: ProblemDescriptionProps) => {
         <h1 className="mb-4 text-2xl font-bold">
           {problemData.id}. {problemData.title}
           {problemData.solved && (
-            <span className="ml-3 text-sm text-success">✓ Solved</span>
+            <span className="ml-3 text-sm text-success">✓ Đã giải</span>
           )}
         </h1>
         

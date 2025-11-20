@@ -127,18 +127,18 @@ const ProblemsList = () => {
                 <Link to={`/problems/${p._id}`} className="cursor-pointer text-sm font-medium hover:text-primary truncate">
                   {p.name}
                 </Link>
-                {p.is_done && <span className="ml-2 text-[10px] font-medium text-green-600">✓ Solved</span>}
+                {p.is_done && <span className="ml-2 text-[10px] font-medium text-green-600">✓ Đã giải</span>}
                 <Badge variant="outline" className={`text-xs ${DIFFICULTY_COLORS[label]}`}>{label}</Badge>
               </div>
               <div className="flex items-center gap-4 mt-1 flex-wrap text-xs text-muted-foreground">
                 <div className="flex items-center gap-1"><Clock className="h-3 w-3" />{p.time_limit_ms}ms</div>
                 <div className="flex items-center gap-1"><Users className="h-3 w-3" />{p.memory_limit_mb}MB</div>
-                <div>{p.number_of_tests || 0} tests</div>
+                <div>{p.number_of_tests || 0} bài test</div>
               </div>
             </div>
             <div>
               <Link to={`/problems/${p._id}`} state={{ from: location.pathname + location.search }}>
-                <Button size="sm" variant="outline" disabled={isBackgroundLoading}>Practice</Button>
+                <Button size="sm" variant="outline" disabled={isBackgroundLoading}>Luyện tập</Button>
               </Link>
             </div>
           </div>

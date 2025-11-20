@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronLeft, ChevronRight, List, Settings } from "lucide-react";
@@ -10,6 +10,9 @@ import { Problem as ApiProblem } from "@/services/types/problems";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import AiAssistantPanel from "@/components/AiAssistantPanel";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { submissionsService } from "@/services/submissions";
+import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
 
 const ProblemDetail = () => {
   const { id } = useParams();
@@ -23,6 +26,9 @@ const ProblemDetail = () => {
   const [prevProblemId, setPrevProblemId] = useState<string | null>(null);
   const [nextProblemId, setNextProblemId] = useState<string | null>(null);
   const [isNeighborLoading, setIsNeighborLoading] = useState(false);
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [isLoadingSubmissions, setIsLoadingSubmissions] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -133,6 +139,60 @@ const ProblemDetail = () => {
     };
   }, [problem]);
 
+  useEffect(() => {
+    let mounted = true;
+    const loadSubmissions = async () => {
+      if (!id || !user?._id) {
+        setSubmissions([]);
+        return;
+      }
+      try {
+        setIsLoadingSubmissions(true);
+        setSubmissionError(null);
+        const res = await submissionsService.getProblemSubmissions(id);
+        const list = (res.data || []).filter((item) => {
+          const studentId = item.student_id || item.student?._id;
+          return !user?._id || studentId === user._id;
+        });
+        if (mounted) {
+          setSubmissions(list);
+        }
+      } catch (err: any) {
+        if (mounted) {
+          setSubmissionError(err?.message || "Không thể tải danh sách bài nộp");
+        }
+      } finally {
+        if (mounted) {
+          setIsLoadingSubmissions(false);
+        }
+      }
+    };
+    loadSubmissions();
+    return () => {
+      mounted = false;
+    };
+  }, [id, user?._id]);
+
+  const getStatusInfo = (status?: string | null) => {
+    const normalized = status?.toLowerCase() || "";
+    if (normalized === "accepted") {
+      return { label: "Đã chấp nhận", badgeClass: "bg-emerald-100 text-emerald-700", cardClass: "border-l-4 border-emerald-300" };
+    }
+    if (normalized === "wrong answer") {
+      return { label: "Sai đáp án", badgeClass: "bg-red-100 text-red-700", cardClass: "border-l-4 border-red-300" };
+    }
+    if (normalized === "time limit exceeded") {
+      return { label: "Quá thời gian", badgeClass: "bg-orange-100 text-orange-700", cardClass: "border-l-4 border-orange-300" };
+    }
+    if (normalized === "runtime error") {
+      return { label: "Lỗi khi chạy", badgeClass: "bg-rose-100 text-rose-700", cardClass: "border-l-4 border-rose-300" };
+    }
+    if (normalized === "pending" || normalized === "waiting") {
+      return { label: "Đang chấm", badgeClass: "bg-slate-200 text-slate-700", cardClass: "border-l-4 border-slate-300" };
+    }
+    return { label: status || "Không xác định", badgeClass: "bg-muted text-muted-foreground", cardClass: "border-l-4 border-border" };
+  };
+
   const handleNavigateProblem = (targetId: string | null | undefined) => {
     if (!targetId || targetId === problem?._id) return;
     navigate(`/problems/${targetId}`);
@@ -232,7 +292,56 @@ const ProblemDetail = () => {
               </TabsContent>
 
               <TabsContent value="submissions" className="m-0 flex-1 overflow-auto scrollbar-custom p-6">
-                <p className="text-muted-foreground">Your submissions will appear here...</p>
+                {isLoadingSubmissions ? (
+                  <div className="flex h-full items-center justify-center text-muted-foreground">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Đang tải danh sách bài nộp...
+                    </div>
+                  </div>
+                ) : submissionError ? (
+                  <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+                    {submissionError}
+                  </div>
+                ) : submissions.length === 0 ? (
+                  <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
+                    Chưa có bài nộp nào cho bài toán này. Hãy viết mã và nộp để xem kết quả tại đây.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {submissions.map((submission) => {
+                      const statusInfo = getStatusInfo(submission.status);
+                      return (
+                        <div
+                          key={submission._id || submission.submission_id}
+                          className={`rounded-lg border bg-card p-4 shadow-sm ${statusInfo.cardClass}`}
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-4">
+                            <div className="space-y-1">
+                              <Badge className={statusInfo.badgeClass}>{statusInfo.label}</Badge>
+                              <div className="text-xs text-muted-foreground">
+                                Nộp lúc: {new Date(submission.submitted_at || submission.createdAt).toLocaleString("vi-VN")}
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-3">
+                              <div className="text-xs text-muted-foreground">
+                                {submission.execution_time_ms ?? "--"} ms • {submission.memory_used_mb ?? "--"} MB
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Đã qua {submission.test_cases_passed}/{submission.total_test_cases} test
+                              </div>
+                              <Link to={`/submissions/${submission._id || submission.submission_id}`}>
+                                <Button variant="outline" size="sm">
+                                  Xem chi tiết
+                                </Button>
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </ResizablePanel>

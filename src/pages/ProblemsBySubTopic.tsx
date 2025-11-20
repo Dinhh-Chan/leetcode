@@ -40,7 +40,7 @@ const Toolbar = () => {
   return (
     <div className="mb-4 flex flex-wrap items-center gap-2">
       <Input
-        placeholder="Search problems..."
+        placeholder="Tìm kiếm bài tập..."
         className="w-64"
         defaultValue={q}
         onChange={(e) => {
@@ -53,7 +53,7 @@ const Toolbar = () => {
       />
       <DifficultyTabs value={difficulty} onChange={(val) => updateParam('difficulty', val || undefined)} />
       <Button variant={solved==='1' ? 'default' : 'outline'} size="sm" onClick={() => updateParam('solved', solved==='1' ? undefined : '1')}>
-        Solved
+        Đã giải
       </Button>
       <select
         className="h-9 rounded-md border px-2 text-sm"
@@ -133,7 +133,7 @@ const ProblemsList = () => {
                 <Link to={`/problems/${p._id}`} className="cursor-pointer text-sm font-medium hover:text-primary truncate">
                   {p.name}
                 </Link>
-                {p.is_done && <span className="ml-2 text-[10px] font-medium text-green-600">✓ Solved</span>}
+                {p.is_done && <span className="ml-2 text-[10px] font-medium text-green-600">✓ Đã giải</span>}
                 <Badge variant="outline" className={`text-xs ${DIFFICULTY_COLORS[label]}`}>{label}</Badge>
               </div>
               <div className="flex items-center gap-4 mt-1 flex-wrap text-xs text-muted-foreground">

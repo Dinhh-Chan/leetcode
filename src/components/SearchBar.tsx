@@ -66,7 +66,7 @@ const SearchBar = memo<SearchBarProps>(({
             onKeyPress={handleKeyPress}
             placeholder={placeholder}
             className="pl-9 pr-10"
-            aria-label="Search problems"
+            aria-label="Tìm kiếm bài tập"
           />
           {showClearButton && query && (
             <Button
@@ -74,7 +74,7 @@ const SearchBar = memo<SearchBarProps>(({
               size="sm"
               className="absolute right-1 top-1/2 h-6 w-6 -translate-y-1/2 p-0 hover:bg-muted"
               onClick={handleClear}
-              aria-label="Clear search"
+              aria-label="Xóa tìm kiếm"
             >
               <X className="h-3 w-3" />
             </Button>
@@ -85,7 +85,7 @@ const SearchBar = memo<SearchBarProps>(({
           variant="outline" 
           size="icon"
           onClick={() => setSortOpen(true)}
-          aria-label="Sort problems"
+          aria-label="Sắp xếp bài tập"
         >
           <ArrowUpDown className="h-4 w-4" />
         </Button>
@@ -94,7 +94,7 @@ const SearchBar = memo<SearchBarProps>(({
           variant="outline" 
           size="icon"
           onClick={() => setFilterOpen(true)}
-          aria-label="Filter problems"
+          aria-label="Lọc bài tập"
         >
           <SlidersHorizontal className="h-4 w-4" />
         </Button>

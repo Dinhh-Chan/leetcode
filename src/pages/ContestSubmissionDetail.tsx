@@ -218,7 +218,7 @@ const ContestSubmissionDetail = () => {
         <div>Submission ID: {submission.submission_id}</div>
         <div>Submitted at: {new Date(submission.submitted_at).toLocaleString('vi-VN')}</div>
         {submission.solved_at && (
-          <div>Solved at: {new Date(submission.solved_at).toLocaleString('vi-VN')}</div>
+          <div>Thời gian hoàn thành: {new Date(submission.solved_at).toLocaleString('vi-VN')}</div>
         )}
       </div>
       </div>
