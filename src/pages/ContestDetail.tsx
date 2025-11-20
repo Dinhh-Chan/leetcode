@@ -1,10 +1,10 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, Trophy, Users, FileCode, Award, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, Trophy, Users, FileCode, Award, CheckCircle2, XCircle } from "lucide-react";
 import Header from "@/components/Header";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { contestsService } from "@/services";
@@ -21,7 +21,7 @@ const ContestDetail = () => {
   const [error, setError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
-  const [ranking, setRanking] = useState<any[]>([]);
+  const [ranking, setRanking] = useState<ContestRankingItem[]>([]);
   const [isLoadingRanking, setIsLoadingRanking] = useState(false);
 
   const loadContest = useCallback(async () => {
@@ -46,7 +46,7 @@ const ContestDetail = () => {
     try {
       setIsLoadingRanking(true);
       const response = await contestsService.getContestRanking(contestIdParam);
-      const rankingData = response.data?.ranking || [];
+      const rankingData = response.data || [];
       setRanking(rankingData);
     } catch (e: any) {
       console.error("Error loading ranking:", e);
@@ -95,6 +95,61 @@ const ContestDetail = () => {
     }
   };
 
+  const contestUsers = contest?.contest_users || [];
+  const contestProblems = contest?.contest_problems || [];
+  
+  const rankingProblemColumns = useMemo(() => {
+    if (contestProblems.length > 0) {
+      return contestProblems.map((contestProblem: any, index: number) => ({
+        id: contestProblem.problem?._id || contestProblem.problem_id,
+        label: `P${index + 1}`,
+        name: contestProblem.problem?.name || contestProblem.problem_name || `Bài ${index + 1}`,
+        fallbackScore: contestProblem.score,
+      }));
+    }
+    const firstRankingProblems = ranking[0]?.problems || [];
+    return firstRankingProblems.map((problem: any, index: number) => ({
+      id: problem.problem_id,
+      label: `P${index + 1}`,
+      name: problem.problem_name || `Bài ${index + 1}`,
+      fallbackScore: problem.score,
+    }));
+  }, [contestProblems, ranking]);
+
+  const getProblemScoreValue = (score: string | number | undefined, fallback: string | number | undefined) => {
+    const raw = score ?? fallback ?? 0;
+    const parsed = typeof raw === "string" ? parseFloat(raw) : raw;
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const calculateTotalScore = (item: ContestRankingItem) => {
+    if (item.total_score !== undefined && item.total_score !== null) {
+      return item.total_score;
+    }
+    const problemMap = new Map(item.problems.map((p) => [p.problem_id, p]));
+    return rankingProblemColumns.reduce((sum, column) => {
+      const data = problemMap.get(column.id);
+      const isSolved = data?.is_done ?? data?.is_solved;
+      if (isSolved) {
+        return sum + getProblemScoreValue(data?.score, column.fallbackScore);
+      }
+      return sum;
+    }, 0);
+  };
+
+  const getRankBadgeInfo = (rank: number) => {
+    if (rank === 1) {
+      return { label: "#1 THE GOAT", className: "bg-amber-100 text-amber-700" };
+    }
+    if (rank === 2) {
+      return { label: "#2 PHÓ GOAT", className: "bg-slate-100 text-slate-700" };
+    }
+    if (rank === 3) {
+      return { label: "#3 Á QUÂN", className: "bg-orange-100 text-orange-700" };
+    }
+    return { label: `#${rank}`, className: "bg-muted text-muted-foreground" };
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -125,9 +180,6 @@ const ContestDetail = () => {
     );
   }
 
-  const contestUsers = contest.contest_users || [];
-  const contestProblems = contest.contest_problems || [];
-  
   const status = contest.status || 'not-participant';
   const isStart = contest.is_start || false;
   const isEnded = (() => {
@@ -344,153 +396,95 @@ const ContestDetail = () => {
           {/* Ranking Tab */}
           {shouldShowProblemsAndRanking && (
             <TabsContent value="ranking" className="mt-6">
-            {isLoadingRanking ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <LoadingSpinner />
-                </CardContent>
-              </Card>
-            ) : ranking.length === 0 ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <p className="text-muted-foreground">Chưa có bảng xếp hạng.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                      <thead className="bg-muted/50 sticky top-0">
-                        <tr>
-                          <th className="px-3 py-3 text-center text-xs font-semibold border-b min-w-[60px]">Rank</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold border-b min-w-[200px]">Team/User</th>
-                          {contestProblems.map((contestProblem: any, idx: number) => {
-                            const problemId = contestProblem.problem?._id || contestProblem.problem_id;
-                            return (
-                              <th 
-                                key={problemId || idx}
-                                className="px-3 py-3 text-center text-xs font-semibold border-b min-w-[80px] cursor-pointer hover:bg-muted/70"
-                                onClick={() => problemId && navigate(`/contest/${contestIdParam}/problems/${problemId}`)}
+              {isLoadingRanking ? (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <LoadingSpinner />
+                  </CardContent>
+                </Card>
+              ) : ranking.length === 0 ? (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <p className="text-muted-foreground">Chưa có bảng xếp hạng.</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse text-sm">
+                        <thead className="bg-muted/40">
+                          <tr>
+                            <th className="px-3 py-3 border-b text-left text-xs font-semibold uppercase tracking-wide">Xếp hạng</th>
+                            <th className="px-4 py-3 border-b text-left text-xs font-semibold uppercase tracking-wide">Họ và tên</th>
+                            <th className="px-4 py-3 border-b text-left text-xs font-semibold uppercase tracking-wide">Mã sinh viên</th>
+                            <th className="px-3 py-3 border-b text-center text-xs font-semibold uppercase tracking-wide">Số bài đã giải</th>
+                            <th className="px-3 py-3 border-b text-center text-xs font-semibold uppercase tracking-wide">Tổng điểm</th>
+                            {rankingProblemColumns.map((column) => (
+                              <th
+                                key={column.id || column.label}
+                                className="px-3 py-3 border-b text-center text-xs font-semibold uppercase tracking-wide"
+                                title={column.name}
                               >
-                                <div className="font-bold">{String.fromCharCode(65 + idx)}</div>
-                                <div className="text-[10px] text-muted-foreground mt-1 truncate max-w-[80px]">{contestProblem.problem?.name?.slice(0, 12) || `Bài ${idx + 1}`}</div>
+                                {column.label}
                               </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {ranking.map((item) => {
+                            const problemMap = new Map(item.problems.map((p) => [p.problem_id, p]));
+                            const totalScore = calculateTotalScore(item);
+                            const rankInfo = getRankBadgeInfo(item.rank);
+
+                            return (
+                              <tr key={item.user._id} className="border-b last:border-0">
+                                <td className="px-3 py-3">
+                                  <div className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ${rankInfo.className}`}>
+                                    {rankInfo.label}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold">
+                                      {(item.user.fullname || item.user.username || "U").charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                      <div className="font-semibold">{item.user.fullname || item.user.username}</div>
+                                      <div className="text-xs text-muted-foreground">#{item.user.username}</div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 font-mono text-sm">{item.user.username}</td>
+                                <td className="px-3 py-3 text-center font-semibold text-primary">{item.accepted_count}</td>
+                                <td className="px-3 py-3 text-center font-semibold text-green-600">
+                                  {totalScore}
+                                </td>
+                                {rankingProblemColumns.map((column) => {
+                                  const data = column.id ? problemMap.get(column.id) : undefined;
+                                  const isSolved = data?.is_done ?? data?.is_solved;
+                                  return (
+                                    <td key={`${item.user._id}-${column.id || column.label}`} className="px-3 py-3 text-center">
+                                      <div
+                                        className={`mx-auto flex h-8 w-8 items-center justify-center rounded-full ${
+                                          isSolved ? "bg-green-100 text-green-600" : "bg-muted text-muted-foreground"
+                                        }`}
+                                        title={column.name}
+                                      >
+                                        {isSolved ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+                                      </div>
+                                    </td>
+                                  );
+                                })}
+                              </tr>
                             );
                           })}
-                          <th className="px-4 py-3 text-center text-xs font-semibold border-b min-w-[80px] bg-primary/10">
-                            <div className="font-bold">Score</div>
-                            <div className="text-[10px] text-muted-foreground mt-1">Total</div>
-                          </th>
-                          <th className="px-4 py-3 text-center text-xs font-semibold border-b min-w-[60px] bg-primary/10">
-                            <div className="font-bold">AC</div>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {ranking.map((item: ContestRankingItem) => {
-                          // Create a map of problem_id to problem data for quick lookup
-                          const problemMap = new Map(item.problems.map(p => [p.problem_id, p]));
-
-                          // Calculate total score
-                          const totalScore = contestProblems.reduce((sum, contestProblem: any) => {
-                            const problemId = contestProblem.problem?._id || contestProblem.problem_id;
-                            const problemData = problemId ? problemMap.get(problemId) : null;
-                            
-                            if (problemData?.is_solved) {
-                              // Priority: problemData.score > contestProblem.score
-                              let scoreToAdd = null;
-                              
-                              if (problemData.score !== undefined && problemData.score !== null && problemData.score !== '') {
-                                scoreToAdd = typeof problemData.score === 'string' ? parseFloat(problemData.score) : problemData.score;
-                              } else if (contestProblem.score !== undefined && contestProblem.score !== null && contestProblem.score !== '') {
-                                scoreToAdd = typeof contestProblem.score === 'string' ? parseFloat(contestProblem.score) : contestProblem.score;
-                              }
-                              
-                              if (scoreToAdd !== null && !isNaN(scoreToAdd)) {
-                                return sum + scoreToAdd;
-                              }
-                            }
-                            return sum;
-                          }, 0);
-
-                          return (
-                            <tr
-                              key={item.user._id}
-                              className={`border-b hover:bg-muted/30 transition-colors ${item.rank <= 3 ? 'bg-primary/5' : ''}`}
-                            >
-                              <td className="px-3 py-3 text-center border-r">
-                                <Badge variant={item.rank === 1 ? 'default' : item.rank === 2 ? 'secondary' : item.rank === 3 ? 'outline' : 'outline'}>
-                                  {item.rank}
-                                </Badge>
-                              </td>
-                              <td className="px-4 py-3 border-r">
-                                <div className="flex items-center gap-2">
-                                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold flex-shrink-0">
-                                    {(item.user.username || 'U').charAt(0).toUpperCase()}
-                                  </div>
-                                  <div className="min-w-0 flex-1">
-                                    <div className="font-semibold text-sm truncate">{item.user.fullname || item.user.username}</div>
-                                    <div className="text-xs text-muted-foreground truncate">@{item.user.username}</div>
-                                  </div>
-                                </div>
-                              </td>
-                              {contestProblems.map((contestProblem: any, idx: number) => {
-                                const problemId = contestProblem.problem?._id || contestProblem.problem_id;
-                                const problemData = problemId ? problemMap.get(problemId) : null;
-                                
-                                return (
-                                  <td 
-                                    key={problemId || idx}
-                                    className={`px-3 py-3 text-center border-r ${
-                                      problemData?.is_solved 
-                                        ? 'bg-green-50 dark:bg-green-950/20' 
-                                        : 'bg-muted/20'
-                                    }`}
-                                  >
-                                    {problemData ? (
-                                      problemData.is_solved ? (
-                                        <div className="flex flex-col items-center">
-                                          <span className="text-green-600 dark:text-green-400 font-bold text-sm">✓</span>
-                                          {(problemData.score !== undefined && problemData.score !== null && problemData.score !== '') || 
-                                           (contestProblem.score !== undefined && contestProblem.score !== null && contestProblem.score !== '') ? (
-                                            <span className="text-xs text-muted-foreground mt-0.5">
-                                              {(() => {
-                                                let scoreValue = null;
-                                                if (problemData.score !== undefined && problemData.score !== null && problemData.score !== '') {
-                                                  scoreValue = typeof problemData.score === 'string' ? parseFloat(problemData.score) : problemData.score;
-                                                } else if (contestProblem.score !== undefined && contestProblem.score !== null && contestProblem.score !== '') {
-                                                  scoreValue = typeof contestProblem.score === 'string' ? parseFloat(contestProblem.score) : contestProblem.score;
-                                                }
-                                                return scoreValue !== null && !isNaN(scoreValue) ? scoreValue.toFixed(1) : '-';
-                                              })()}
-                                            </span>
-                                          ) : null}
-                                        </div>
-                                      ) : (
-                                        <span className="text-muted-foreground">-</span>
-                                      )
-                                    ) : (
-                                      <span className="text-muted-foreground">-</span>
-                                    )}
-                                  </td>
-                                );
-                              })}
-                              <td className="px-4 py-3 text-center border-r bg-primary/10 font-bold">
-                                {totalScore.toFixed(1)}
-                              </td>
-                              <td className="px-4 py-3 text-center bg-primary/10 font-bold text-primary">
-                                {item.accepted_count}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
           )}
         </Tabs>

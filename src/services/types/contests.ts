@@ -61,9 +61,10 @@ export interface MyContestsResponse {
 
 export interface ContestRankingProblem {
   problem_id: string;
-  problem_name: string;
-  is_solved: boolean;
-  solved_at: string | null;
+  problem_name?: string;
+  is_solved?: boolean;
+  is_done?: boolean;
+  solved_at?: string | null;
   score?: string | number;
 }
 
@@ -75,13 +76,12 @@ export interface ContestRankingItem {
     fullname: string;
   };
   accepted_count: number;
+  total_score?: number;
   problems: ContestRankingProblem[];
 }
 
 export interface ContestRankingResponse {
   success: boolean;
-  data: {
-    ranking: ContestRankingItem[];
-  };
+  data: ContestRankingItem[];
 }
 
