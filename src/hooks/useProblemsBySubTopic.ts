@@ -11,19 +11,17 @@ export const useProblemsBySubTopic = () => {
   const page = Number(params.get('page') || 1);
   const limit = Number(params.get('limit') || 20);
   const q = params.get('q') || '';
-  const difficulty = params.get('difficulty') || '';
-  const solved = params.get('solved') || '';
-  const sort = params.get('sort') || '';
+  const difficulty = ''; // deprecated filters
+  const solved = ''; // deprecated filters
+  const defaultSort = '{"difficulty":1}';
 
   const query = useQuery({
-    queryKey: ['problems-by-subtopic', subTopicId, page, limit, q, difficulty, solved, sort],
+    queryKey: ['problems-by-subtopic', subTopicId, page, limit, q],
     queryFn: () => problemsService.getProblemsBySubTopic(subTopicId as string, {
       page,
       limit,
       q: q || undefined,
-      difficulty: difficulty || undefined,
-      solved: solved || undefined,
-      sort: sort || undefined,
+      sort: defaultSort,
       withTestcases: false,
     }),
     enabled: !!subTopicId,
@@ -77,7 +75,7 @@ export const useProblemsBySubTopic = () => {
     q,
     difficulty,
     solved,
-    sort,
+    sort: defaultSort,
     updateParam,
     progress,
   };

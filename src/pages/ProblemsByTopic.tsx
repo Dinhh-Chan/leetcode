@@ -5,62 +5,22 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useLocation, useParams } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { problemsService } from "@/services/problems";
+import { subTopicsService } from "@/services/subTopics";
+import type { Problem, ProblemsListResponse } from "@/services/types/problems";
+import type { SubTopicItem } from "@/services/types/subtopics";
 import { useProblemsByTopic } from "@/hooks/useProblemsByTopic";
 import { DIFFICULTY_COLORS } from "@/constants";
 import { Check, Clock, Users } from "lucide-react";
-import { useMemo } from "react";
+
+const SUBTOPIC_PAGE_SIZE = 20;
 
 const DIFFICULTY_LABEL = (d: number): 'Dễ' | 'Trung bình' | 'Khó' => {
   if (d <= 2) return 'Dễ';
   if (d === 3) return 'Trung bình';
   return 'Khó';
-};
-
-const DifficultyTabs = ({ value, onChange }: { value: string; onChange: (val: string)=>void }) => {
-  const items = [
-    { key: '', label: 'Tất cả' },
-    { key: '1,2', label: 'Dễ' },
-    { key: '3', label: 'Trung bình' },
-    { key: '4,5', label: 'Khó' },
-  ];
-  return (
-    <div className="flex gap-2">
-      {items.map(it => (
-        <Button key={it.key || 'all'} variant={value===it.key? 'default':'outline'} size="sm" onClick={() => onChange(it.key)}>
-          {it.label}
-        </Button>
-      ))}
-    </div>
-  );
-};
-
-const Toolbar = () => {
-  const { difficulty, sort, order, updateParam } = useProblemsByTopic();
-  return (
-    <div className="mb-4 flex flex-wrap items-center gap-2">
-      <DifficultyTabs value={difficulty} onChange={(val) => updateParam('difficulty', val || undefined)} />
-      <select
-        className="h-9 rounded-md border px-2 text-sm"
-        value={sort || ''}
-        onChange={(e) => updateParam('sort', e.target.value || undefined)}
-      >
-        <option value=''>Sắp xếp</option>
-        <option value='difficulty'>Độ khó</option>
-        <option value='name'>Tên</option>
-        <option value='createdAt'>Ngày tạo</option>
-      </select>
-      {sort && (
-        <select
-          className="h-9 rounded-md border px-2 text-sm"
-          value={order || 'asc'}
-          onChange={(e) => updateParam('order', e.target.value as 'asc' | 'desc')}
-        >
-          <option value='asc'>Tăng dần</option>
-          <option value='desc'>Giảm dần</option>
-        </select>
-      )}
-    </div>
-  );
 };
 
 const ProgressCard = () => {
@@ -77,10 +37,18 @@ const ProgressCard = () => {
   );
 };
 
-const ProblemsList = () => {
-  const { data, isLoading, isFetching, pagination } = useProblemsByTopic();
+const ProblemRows = ({
+  items,
+  isLoading,
+  isFetching,
+  emptyMessage,
+}: {
+  items: Problem[];
+  isLoading: boolean;
+  isFetching: boolean;
+  emptyMessage?: string;
+}) => {
   const location = useLocation();
-  const items = data;
   const isBackgroundLoading = isFetching && !isLoading;
 
   if (isLoading) {
@@ -102,13 +70,13 @@ const ProblemsList = () => {
   if (!items?.length) {
     return (
       <div className="rounded-lg border bg-card p-8 text-center text-muted-foreground">
-        Chưa có bài nào trong topic này.
+        {emptyMessage || "Chưa có bài nào."}
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg border bg-card relative">
+    <div className="relative rounded-lg border bg-card">
       {isBackgroundLoading && (
         <div className="absolute inset-0 z-10 rounded-lg bg-background/60 backdrop-blur-sm transition-opacity" />
       )}
@@ -117,34 +85,61 @@ const ProblemsList = () => {
         return (
           <div
             key={p._id}
-            className={`flex items-center gap-4 p-3 transition-opacity ${idx !== items.length - 1 ? 'border-b' : ''} ${isBackgroundLoading ? 'opacity-60' : 'opacity-100'}`}
+            className={`flex items-center gap-4 p-3 transition-opacity ${idx !== items.length - 1 ? "border-b" : ""} ${
+              isBackgroundLoading ? "opacity-60" : "opacity-100"
+            }`}
           >
             <div className="flex w-8 items-center justify-center">
               {p.is_done ? <Check className="h-4 w-4 text-green-600" /> : null}
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <Link to={`/problems/${p._id}`} className="cursor-pointer text-sm font-medium hover:text-primary truncate">
+                <Link
+                  to={`/problems/${p._id}`}
+                  className="cursor-pointer truncate text-sm font-medium hover:text-primary"
+                >
                   {p.name}
                 </Link>
                 {p.is_done && <span className="ml-2 text-[10px] font-medium text-green-600">✓ Đã giải</span>}
-                <Badge variant="outline" className={`text-xs ${DIFFICULTY_COLORS[label]}`}>{label}</Badge>
+                <Badge variant="outline" className={`text-xs ${DIFFICULTY_COLORS[label]}`}>
+                  {label}
+                </Badge>
               </div>
-              <div className="flex items-center gap-4 mt-1 flex-wrap text-xs text-muted-foreground">
-                <div className="flex items-center gap-1"><Clock className="h-3 w-3" />{p.time_limit_ms}ms</div>
-                <div className="flex items-center gap-1"><Users className="h-3 w-3" />{p.memory_limit_mb}MB</div>
+              <div className="mt-1 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {p.time_limit_ms}ms
+                </div>
+                <div className="flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  {p.memory_limit_mb}MB
+                </div>
                 <div>{p.number_of_tests || 0} bài test</div>
               </div>
             </div>
             <div>
               <Link to={`/problems/${p._id}`} state={{ from: location.pathname + location.search }}>
-                <Button size="sm" variant="outline" disabled={isBackgroundLoading}>Luyện tập</Button>
+                <Button size="sm" variant="outline" disabled={isBackgroundLoading}>
+                  Luyện tập
+                </Button>
               </Link>
             </div>
           </div>
         );
       })}
     </div>
+  );
+};
+
+const ProblemsList = () => {
+  const { data, isLoading, isFetching } = useProblemsByTopic();
+  return (
+    <ProblemRows
+      items={data}
+      isLoading={isLoading}
+      isFetching={isFetching}
+      emptyMessage="Chưa có bài nào trong topic này."
+    />
   );
 };
 
@@ -174,9 +169,139 @@ const PaginationBar = () => {
   );
 };
 
+const SubTopicPagination = ({
+  pagination,
+  page,
+  onPageChange,
+}: {
+  pagination?: { total: number; totalPages: number; limit: number };
+  page: number;
+  onPageChange: (page: number) => void;
+}) => {
+  if (!pagination) return null;
+  const start = (page - 1) * pagination.limit + 1;
+  const end = Math.min(page * pagination.limit, pagination.total);
+  return (
+    <div className="mt-3 flex items-center justify-between">
+      <p className="text-sm text-muted-foreground">
+        Hiển thị {pagination.total === 0 ? 0 : start} đến {end} trong tổng số {pagination.total} kết quả
+      </p>
+      <div className="flex items-center gap-2">
+        <Button variant="outline" size="sm" onClick={() => onPageChange(page - 1)} disabled={page === 1}>
+          Trước
+        </Button>
+        <span className="text-sm">
+          Trang {page} / {pagination.totalPages || 1}
+        </span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(page + 1)}
+          disabled={page === pagination.totalPages || pagination.total === 0}
+        >
+          Sau
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+const SubTopicFilter = ({
+  subTopics,
+  isLoading,
+  selectedSubTopic,
+  onSelect,
+}: {
+  subTopics?: SubTopicItem[];
+  isLoading: boolean;
+  selectedSubTopic: SubTopicItem | null;
+  onSelect: (subTopic: SubTopicItem | null) => void;
+}) => {
+  if (isLoading) {
+    return (
+      <div className="mb-6">
+        <Skeleton className="h-6 w-40" />
+        <div className="mt-3 flex gap-2">
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <Skeleton key={idx} className="h-8 w-24 rounded-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!subTopics?.length) return null;
+
+  return (
+    <div className="mb-6">
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Chủ đề nhỏ</h2>
+        {selectedSubTopic && (
+          <Button variant="ghost" size="sm" onClick={() => onSelect(null)}>
+            Hiển thị tất cả
+          </Button>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          variant={selectedSubTopic ? "outline" : "default"}
+          onClick={() => onSelect(null)}
+        >
+          Tất cả
+        </Button>
+        {subTopics.map((subTopic) => (
+          <Button
+            key={subTopic._id}
+            size="sm"
+            variant={selectedSubTopic?._id === subTopic._id ? "default" : "outline"}
+            onClick={() =>
+              onSelect(selectedSubTopic?._id === subTopic._id ? null : subTopic)
+            }
+          >
+            {subTopic.sub_topic_name}
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const ProblemsByTopic = () => {
   const { topicId } = useParams();
-  const { data, isLoading, pagination } = useProblemsByTopic();
+  const { data, pagination } = useProblemsByTopic();
+  const [selectedSubTopic, setSelectedSubTopic] = useState<SubTopicItem | null>(null);
+  const [subTopicPage, setSubTopicPage] = useState(1);
+
+  const { data: subTopics, isLoading: subTopicsLoading } = useQuery({
+    queryKey: ["subtopics", topicId],
+    queryFn: async () => {
+      const list = await subTopicsService.getMany();
+      return list.filter((item) => item.topic_id === topicId);
+    },
+    enabled: !!topicId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const selectedSubTopicId = selectedSubTopic?._id;
+
+  const subTopicProblemsQuery = useQuery<ProblemsListResponse>({
+    queryKey: ["problems-sub-topic", selectedSubTopicId, subTopicPage],
+    queryFn: () =>
+      problemsService.getProblemsBySubTopic(selectedSubTopicId as string, {
+        page: subTopicPage,
+        limit: SUBTOPIC_PAGE_SIZE,
+      }),
+    enabled: !!selectedSubTopicId,
+    placeholderData: (prev) => prev,
+  });
+
+  const handleSelectSubTopic = (subTopic: SubTopicItem | null) => {
+    setSelectedSubTopic(subTopic);
+    setSubTopicPage(1);
+  };
+
+  const showingSubTopic = Boolean(selectedSubTopic);
 
   // Title uses topic name from first item if available
   const title = useMemo(() => {
@@ -192,14 +317,45 @@ const ProblemsByTopic = () => {
         <LeftSidebar />
         <main className="flex-1 overflow-auto p-6">
           <h1 className="mb-2 text-2xl font-bold">{title}</h1>
-          <Toolbar />
+          <SubTopicFilter
+            subTopics={subTopics}
+            isLoading={subTopicsLoading}
+            selectedSubTopic={selectedSubTopic}
+            onSelect={handleSelectSubTopic}
+          />
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             <div className="lg:col-span-1">
               <ProgressCard />
             </div>
             <div className="lg:col-span-3">
-              <ProblemsList />
-              <PaginationBar />
+              {showingSubTopic ? (
+                <>
+                  <div className="mb-3 rounded-lg border bg-muted/40 p-4 text-sm">
+                    <p className="font-medium">
+                      Đang xem sub-topic: {selectedSubTopic?.sub_topic_name}
+                    </p>
+                    <p className="text-muted-foreground">
+                      Hiển thị tối đa {SUBTOPIC_PAGE_SIZE} bài tập mỗi trang.
+                    </p>
+                  </div>
+                  <ProblemRows
+                    items={subTopicProblemsQuery.data?.data || []}
+                    isLoading={subTopicProblemsQuery.isLoading}
+                    isFetching={subTopicProblemsQuery.isFetching}
+                    emptyMessage="Chưa có bài nào trong sub-topic này."
+                  />
+                  <SubTopicPagination
+                    pagination={subTopicProblemsQuery.data?.pagination}
+                    page={subTopicPage}
+                    onPageChange={setSubTopicPage}
+                  />
+                </>
+              ) : (
+                <>
+                  <ProblemsList />
+                  <PaginationBar />
+                </>
+              )}
             </div>
           </div>
         </main>

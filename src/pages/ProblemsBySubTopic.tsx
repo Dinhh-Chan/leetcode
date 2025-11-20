@@ -17,26 +17,8 @@ const DIFFICULTY_LABEL = (d: number): 'Dễ' | 'Trung bình' | 'Khó' => {
   return 'Khó';
 };
 
-const DifficultyTabs = ({ value, onChange }: { value: string; onChange: (val: string)=>void }) => {
-  const items = [
-    { key: '', label: 'Tất cả' },
-    { key: '1,2', label: 'Dễ' },
-    { key: '3', label: 'Trung bình' },
-    { key: '4,5', label: 'Khó' },
-  ];
-  return (
-    <div className="flex gap-2">
-      {items.map(it => (
-        <Button key={it.key || 'all'} variant={value===it.key? 'default':'outline'} size="sm" onClick={() => onChange(it.key)}>
-          {it.label}
-        </Button>
-      ))}
-    </div>
-  );
-};
-
 const Toolbar = () => {
-  const { q, difficulty, solved, sort, updateParam } = useProblemsBySubTopic();
+  const { q, updateParam } = useProblemsBySubTopic();
   return (
     <div className="mb-4 flex flex-wrap items-center gap-2">
       <Input
@@ -51,20 +33,6 @@ const Toolbar = () => {
           (e.currentTarget as any)._t = window.setTimeout(() => updateParam('q', value || undefined), 300);
         }}
       />
-      <DifficultyTabs value={difficulty} onChange={(val) => updateParam('difficulty', val || undefined)} />
-      <Button variant={solved==='1' ? 'default' : 'outline'} size="sm" onClick={() => updateParam('solved', solved==='1' ? undefined : '1')}>
-        Đã giải
-      </Button>
-      <select
-        className="h-9 rounded-md border px-2 text-sm"
-        value={sort || ''}
-        onChange={(e) => updateParam('sort', e.target.value || undefined)}
-      >
-        <option value=''>Sort</option>
-        <option value='{"difficulty":1}'>Difficulty ↑</option>
-        <option value='{"difficulty":-1}'>Difficulty ↓</option>
-        <option value='{"updatedAt":-1}'>Updated (newest)</option>
-      </select>
     </div>
   );
 };

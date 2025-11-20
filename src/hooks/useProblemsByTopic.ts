@@ -13,8 +13,10 @@ export const useProblemsByTopic = () => {
   const page = Number(params.get('page') || 1);
   const limit = Number(params.get('limit') || 20);
   const difficulty = params.get('difficulty') || '';
-  const sort = params.get('sort') || '';
-  const order = (params.get('order') || 'asc') as 'asc' | 'desc';
+  const sortParam = params.get('sort');
+  const orderParam = params.get('order');
+  const sort = sortParam || 'difficulty';
+  const order = (orderParam || 'asc') as 'asc' | 'desc';
 
   // Auto filter is_public = true if user is STUDENT
   const isPublic = user?.systemRole === 'Student' ? true : undefined;
