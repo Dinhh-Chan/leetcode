@@ -365,6 +365,8 @@ const ProblemDetail = () => {
               problemDescription={problem?.description || ''}
               exampleCode={problem?.solution || problem?.code_template || ''}
               userCode={userCode}
+              problemId={problem?._id}
+              problemName={problem?.name}
             />
           </ResizablePanel>
         </ResizablePanelGroup>

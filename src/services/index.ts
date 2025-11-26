@@ -6,6 +6,8 @@ export { subTopicsService } from './subTopics';
 export { topicsService } from './topics';
 export { contestsService } from './contests';
 export { contestSubmissionsService } from './contestSubmissions';
+export { sessionsService } from './sessions';
+export { messagesService } from './messages';
 
 // Export service types
 export type { AxiosRequestConfig, AxiosResponse, AxiosError } from './api';
