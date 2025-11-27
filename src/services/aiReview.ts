@@ -14,7 +14,7 @@ export async function streamCodeReview(
   payload: ReviewStreamPayload,
   onChunk: (chunk: string) => void
 ): Promise<void> {
-  const response = await fetch("https://ai-code-service.ript.vn/review_stream", {
+  const response = await fetch("https://ai-code-service-internal.ript.vn/api/v1/review_stream", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

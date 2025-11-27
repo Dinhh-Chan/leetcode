@@ -346,13 +346,36 @@ class ProblemsService {
         return [];
       };
 
+      const resolveMeta = (source: any) => {
+        if (!source || typeof source !== 'object') return undefined;
+        if (source.meta && typeof source.meta === 'object') return source.meta;
+        if (source.pagination && typeof source.pagination === 'object') return source.pagination;
+        return undefined;
+      };
+
       if (payload?.data) {
         items = extractArray(payload.data);
-        const meta = payload.meta ?? payload.data?.meta ?? {};
-        page = Number(meta.page ?? payload.data.page ?? page);
-        limit = Number(meta.limit ?? payload.data.limit ?? limit);
-        total = Number(meta.total ?? payload.data.total ?? items.length ?? 0);
-        totalPages = Number(meta.totalPages ?? payload.data.totalPages ?? Math.max(1, Math.ceil((total || items.length || 0) / (limit || 1))));
+        const meta =
+          resolveMeta(payload) ??
+          resolveMeta(payload.data) ??
+          resolveMeta(payload.meta) ??
+          resolveMeta(payload.data?.meta) ??
+          resolveMeta(payload.data?.pagination) ??
+          {};
+
+        const pageCandidate = payload.data.page ?? meta?.page ?? payload.page;
+        const limitCandidate = payload.data.limit ?? meta?.limit ?? payload.limit;
+        const totalCandidate = payload.data.total ?? meta?.total ?? payload.total;
+        const totalPagesCandidate =
+          payload.data.totalPages ?? meta?.totalPages ?? payload.totalPages;
+
+        page = Number(pageCandidate ?? page);
+        limit = Number(limitCandidate ?? limit);
+        total = Number(totalCandidate ?? items.length ?? 0);
+        totalPages = Number(
+          totalPagesCandidate ??
+            Math.max(1, Math.ceil((total || items.length || 0) / (limit || 1)))
+        );
       } else {
         items = extractArray(payload);
         page = Number(payload.page ?? page);
