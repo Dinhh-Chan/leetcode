@@ -1,4 +1,4 @@
-import React, { memo, useState, useMemo } from "react";
+import React, { memo, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Check, Circle, Star, Clock, Users, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -25,8 +25,6 @@ const ProblemList = memo<ProblemListProps>(({ state }) => {
     searchQuery,
   } = state;
   const { isAuthenticated } = useAuthContext();
-  const [sortBy, setSortBy] = useState<'title' | 'difficulty' | 'acceptance'>('title');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   const getDifficultyLabel = (difficulty: number): 'Dễ' | 'Trung bình' | 'Khó' => {
     if (difficulty === 1) return 'Dễ';
@@ -78,15 +76,6 @@ const ProblemList = memo<ProblemListProps>(({ state }) => {
     });
   }, [problems, currentPage, pagination]);
 
-  const handleSort = (field: 'title' | 'difficulty' | 'acceptance') => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('asc');
-    }
-  };
-
   if (isLoading && !isFetching) {
     return (
       <div className="rounded-lg border bg-card">
@@ -107,36 +96,7 @@ const ProblemList = memo<ProblemListProps>(({ state }) => {
 
   return (
     <div className="space-y-4">
-      {/* Header with sorting */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Bài tập</h2>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleSort('title')}
-            className={cn(sortBy === 'title' && 'bg-muted')}
-          >
-            {/* Tiêu đề {sortBy === 'title' && (sortOrder === 'asc' ? '↑' : '↓')} */}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleSort('acceptance')}
-            className={cn(sortBy === 'acceptance' && 'bg-muted')}
-          >
-            {/* Tỷ lệ đúng {sortBy === 'acceptance' && (sortOrder === 'asc' ? '↑' : '↓')} */}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleSort('difficulty')}
-            className={cn(sortBy === 'difficulty' && 'bg-muted')}
-          >
-            {/* Độ khó {sortBy === 'difficulty' && (sortOrder === 'asc' ? '↑' : '↓')} */}
-          </Button>
-        </div>
-      </div>
+      <h2 className="text-lg font-semibold">Bài tập</h2>
 
       {/* Problems list */}
       <div className="rounded-lg border bg-card relative">

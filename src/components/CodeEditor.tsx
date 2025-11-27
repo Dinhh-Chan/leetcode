@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Play, Upload, Settings, Maximize2, Loader2 } from "lucide-react";
+import { Play, Upload, Loader2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import Editor from "@monaco-editor/react";
@@ -288,9 +288,6 @@ const CodeEditor = ({ initialCode = "", language = "python", testCases = [], pro
               ))}
             </SelectContent>
           </Select>
-          <Button variant="ghost" size="sm">
-            Tự động
-          </Button>
           <div className="ml-2 hidden md:flex gap-2">
             <Button variant="outline" size="sm" className="gap-1" onClick={handleRun} disabled={isRunning}>
               {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
@@ -301,14 +298,6 @@ const CodeEditor = ({ initialCode = "", language = "python", testCases = [], pro
               Nộp bài
             </Button>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon">
-            <Settings className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon">
-            <Maximize2 className="h-4 w-4" />
-          </Button>
         </div>
       </div>
 

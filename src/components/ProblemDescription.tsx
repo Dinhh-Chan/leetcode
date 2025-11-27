@@ -77,11 +77,6 @@ const ProblemDescription = ({ problemData }: ProblemDescriptionProps) => {
               ))}
             </div>
           )}
-          
-          <Button variant="ghost" size="sm" className="ml-auto gap-1">
-            <Lightbulb className="h-4 w-4" />
-            Hint
-          </Button>
         </div>
       </div>
 
